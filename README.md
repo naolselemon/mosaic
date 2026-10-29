@@ -6,6 +6,10 @@ A read-only Omarchy shell plugin that shows where desktop applications keep thei
 
 The **Reveal** mark frames a visible centre with four geometric pieces: a visual identity for making application storage visible. The live shell icon follows the current theme; the overview and About mark use the selected chart accent. Page-specific navigation icons remain distinct.
 
+### 2.5.1
+
+The repository now separates QML entry points, reusable components, pages, JavaScript models, Python backend modules, and language-specific test suites. Imports, resource paths, development deployment, and test commands follow that layout. Plugin identity, stored-data locations, and behavior are unchanged.
+
 ### 2.5.0
 
 App Data Map is now **Mosaic**, with the plugin ID `naolselemon.mosaic`, the Reveal logo, and a matching notification icon. The storage-analysis features and privacy model are unchanged. Existing local builds need the one-time namespace migration described below; Mosaic does not maintain an old-ID alias or silently read the old data directory.
@@ -140,6 +144,25 @@ Paths, metadata and scanner messages are bounded and validated before display. D
 
 The separate dashboard worker has a 45-second process alarm and 60-second shell watchdog. Leftover checks have independent budgets: at most 128 candidates, 20,000 entries/3 seconds overall and 5,000 entries/0.25 seconds per root. Package lookup is capped at 8 seconds, 10,000 packages and 64 MiB of database metadata; subprocess output and individual reads are bounded. These are metadata reads, not package installation/removal commands.
 
+## Repository layout
+
+```text
+mosaic/
+├── manifest.json       # Plugin identity and QML entry points
+├── qml/                # BarWidget, Panel, Service, and workspace navigation
+│   ├── components/     # Shared controls, charts, cards, and Reveal mark
+│   ├── pages/          # Overview, categories, history, settings, and detail pages
+│   └── lib/            # JavaScript models, protocols, geometry, and presentation
+├── backend/            # Python scanner, persistence, mappings, and file actions
+├── tests/
+│   ├── python/         # Backend regression tests
+│   └── js/             # Model, protocol, and geometry regression tests
+├── assets/             # Public SVG and PNG branding assets
+└── i18n/               # Translation catalogs
+```
+
+`manifest.json` loads `qml/Service.qml` and `qml/BarWidget.qml`. The service invokes the Python entry points in `backend/`; pages share controls from `qml/components/` and pure JavaScript from `qml/lib/`. Private settings and history live outside this repository and the installed code directory.
+
 ## Installation and development
 
 Tested with Omarchy `4.5.0rc2-1`, its plugin-capable Quickshell and Qt 6.12. Runtime dependencies are Python 3, `gdbus` (GLib), and a file manager implementing `org.freedesktop.FileManager1`, such as Omarchy's Nautilus. Enabled growth alerts use `notify-send` from libnotify. Installation attribution reads pacman's local database and uses `pacman-conf` when available; Flatpak support uses `flatpak` when installed. Node.js is only needed for JavaScript tests.
@@ -150,14 +173,12 @@ Install from GitHub:
 omarchy plugin add https://github.com/naolselemon/mosaic.git --enable
 ```
 
-From this source directory:
+For local development, stop any active scan and close the popup, then mirror this source directory into the installed plugin with `rsync`. This removes obsolete code files while preserving installed Git metadata; it does not touch the separate settings/history directories.
 
 ```sh
 plugin="$HOME/.config/omarchy/plugins/naolselemon.mosaic"
-mkdir -p "$plugin/i18n" "$plugin/assets"
-cp *.qml *.js *.py manifest.json README.md LICENSE "$plugin/"
-cp i18n/*.json "$plugin/i18n/"
-cp assets/*.svg assets/*.png "$plugin/assets/"
+mkdir -p "$plugin"
+rsync -a --delete --exclude='.git/' --exclude='__pycache__/' ./ "$plugin/"
 omarchy plugin validate "$plugin"
 omarchy-shell shell rescanPlugins
 omarchy plugin list
@@ -169,7 +190,7 @@ Once Mosaic appears in the plugin list:
 omarchy plugin enable naolselemon.mosaic --section right
 ```
 
-Edit this source directory, then copy changes into the installed directory. If plugin rescanning leaves old QML cached, run `omarchy restart shell`; this restarts the whole Omarchy shell, not just this plugin. Do not launch a second Quickshell instance for it.
+Edit this source directory, then repeat the mirror command to deploy changes. If plugin rescanning leaves old QML cached, run `omarchy restart shell`; this restarts the whole Omarchy shell, not just this plugin. Do not launch a second Quickshell instance for it.
 
 ### Migrating a local App Data Map installation
 
@@ -202,9 +223,9 @@ omarchy-shell naolselemon.mosaic workspaceStatus
 omarchy-shell naolselemon.mosaic workspaceRefresh
 ```
 
-`scan` and `deepScan` return whether a scan started; a busy worker or an unknown selected ID is not silently replaced with another scan. `status` returns overview summary and current-job metadata. `snapshot` returns the overview application array; `detail` returns a matching deeper result when available, otherwise that application's overview result. The Python CLI equivalents are `python3 -B scanner.py scan` and `python3 -B scanner.py scan --app com.microsoft.VSCode.desktop`. Snapshots include absolute paths and directory names; treat them as private when sharing diagnostics.
+`scan` and `deepScan` return whether a scan started; a busy worker or an unknown selected ID is not silently replaced with another scan. `status` returns overview summary and current-job metadata. `snapshot` returns the overview application array; `detail` returns a matching deeper result when available, otherwise that application's overview result. The Python CLI equivalents are `python3 -B backend/scanner.py scan` and `python3 -B backend/scanner.py scan --app com.microsoft.VSCode.desktop`. Snapshots include absolute paths and directory names; treat them as private when sharing diagnostics.
 
-`workspaceStatus` returns dashboard data, readiness and errors. `workspaceRefresh` refreshes package/leftover metadata and derived views without recording another scan. Mutations are also available through `workspaceSettings JSON`, `mappingSave EXACT.desktop /absolute/path CATEGORY`, `mappingRemove EXACT.desktop /absolute/path`, and `historyClear`. They return whether the operation was accepted; check `workspaceStatus` for its eventual outcome. Settings accept `historyEnabled`, `alertsEnabled` and integer `thresholdBytes`. The one-shot `python3 -B workspace.py` worker accepts one bounded JSON request on stdin and returns one validated response. Dashboard mutations and scans are single-flight.
+`workspaceStatus` returns dashboard data, readiness and errors. `workspaceRefresh` refreshes package/leftover metadata and derived views without recording another scan. Mutations are also available through `workspaceSettings JSON`, `mappingSave EXACT.desktop /absolute/path CATEGORY`, `mappingRemove EXACT.desktop /absolute/path`, and `historyClear`. They return whether the operation was accepted; check `workspaceStatus` for its eventual outcome. Settings accept `historyEnabled`, `alertsEnabled` and integer `thresholdBytes`. The one-shot `python3 -B backend/workspace.py` worker accepts one bounded JSON request on stdin and returns one validated response. Dashboard mutations and scans are single-flight.
 
 **Diagnostic limitation:** full `workspaceStatus` IPC replies can fail with `QLocalSocket::PeerClosedError` for populated histories on the tested shell. The UI accesses state directly and remains usable; the private JSON files above provide persisted-state diagnostics.
 
@@ -213,8 +234,8 @@ omarchy-shell naolselemon.mosaic workspaceRefresh
 From the source directory:
 
 ```sh
-python3 -B -m unittest discover -s tests -v
-node --test tests/*.test.cjs
+python3 -B -m unittest discover -s tests/python -v
+node --test tests/js/*.test.cjs
 omarchy plugin validate .
 ```
 
