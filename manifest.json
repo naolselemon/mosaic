@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "naolselemon.mosaic",
+  "name": "Mosaic",
+  "version": "2.5.0",
+  "author": "Naol Selemon",
+  "license": "MIT",
+  "description": "Explore the settings, cache, data and state associated with your apps. Read-only, evidence-labeled, and entirely local.",
+  "kinds": ["service", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Mosaic",
+    "description": "Where your apps keep their files",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
