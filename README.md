@@ -32,6 +32,14 @@ Click the bar icon to explore. Click the Mosaic logo for the dashboard; press **
 
 [User guide](docs/guide.md) · [Releases](https://github.com/naolselemon/mosaic/releases) · [Older development copies](docs/guide.md#older-development-copies)
 
+## Uninstall
+
+```sh
+omarchy plugin remove naolselemon.mosaic
+```
+
+Confirm the removal when prompted. Separate Mosaic preferences/history and application files are preserved.
+
 ## Make it better
 
 [Report a bug](https://github.com/naolselemon/mosaic/issues) · [Contribute](CONTRIBUTING.md) · [Report a vulnerability privately](SECURITY.md)
