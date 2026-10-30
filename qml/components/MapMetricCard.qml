@@ -17,14 +17,16 @@ Rectangle {
     implicitWidth: Style.space(148)
     implicitHeight: content.implicitHeight + Style.space(20)
     Layout.alignment: Qt.AlignTop
-    radius: Style.cornerRadius
+    radius: Style.space(10)
     color: Util.alpha(tint, 0.075)
     Ui.Button {
         anchors.fill: parent
         visible: root.actionable
         focusable: root.actionable
+        radius: root.radius
         text: ""
         Accessible.name: root.label + ": " + root.value
+        Accessible.description: root.detail
         onClicked: root.clicked()
         onActiveFocusChanged: if (activeFocus) root.focused(root)
     }

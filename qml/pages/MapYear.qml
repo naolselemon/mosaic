@@ -22,7 +22,24 @@ ColumnLayout {
     property int selectedMonth: new Date().getMonth()
     readonly property var selectedMonthEntry: summary.months[selectedMonth]
     readonly property bool showInsights: !workspace.prefs || workspace.prefs.showYearInsights
-    spacing: Style.space(10)
+    property int selectedInsight: -1
+    readonly property var insights: [
+        {label: "year.peak", icon: "chart", sample: summary.peak,
+            value: workspace.size(summary.peak ? summary.peak.bytes : null, summary.peak && summary.peak.partial)},
+        {label: "year.largestApp", icon: "apps", sample: summary.largestApp,
+            value: workspace.size(summary.largestApp ? summary.largestApp.bytes : null, summary.largestApp && summary.largestApp.partial)},
+        {label: "year.largestCache", icon: "cache", sample: summary.largestCache,
+            value: workspace.size(summary.largestCache ? summary.largestCache.bytes : null, summary.largestCache && summary.largestCache.partial)},
+        {label: "year.rise", icon: "growth", sample: summary.rise,
+            value: summary.rise ? workspace.strings.t("workspace.positive").arg(workspace.size(summary.rise.delta))
+                : workspace.strings.t("workspace.noDelta")},
+        {label: "year.fall", icon: "shrink", sample: summary.fall,
+            value: summary.fall ? workspace.strings.t("workspace.negative").arg(workspace.size(-summary.fall.delta))
+                : workspace.strings.t("workspace.noDelta")}
+    ]
+    spacing: Style.space(8)
+    onImplicitHeightChanged: if (showInsights && selectedInsight >= 0 && !infoOpen)
+        Qt.callLater(function() { root.workspace.reveal(insightExplanation); })
 
     onAvailableYearsChanged: {
         if (availableYears.indexOf(selectedYear) < 0)
@@ -162,7 +179,7 @@ ColumnLayout {
         }
         MapText {
             Layout.fillWidth: true
-            visible: root.infoOpen && root.selectedMonthEntry.recorded
+            visible: root.selectedMonthEntry.recorded
             text: root.workspace.date(root.selectedMonthEntry.at)
             font.pixelSize: Style.font.caption
             color: Util.alpha(Color.popups.text, 0.65)
@@ -186,117 +203,126 @@ ColumnLayout {
             font.pixelSize: Style.font.caption
             wrapMode: Text.Wrap
         }
-        Ui.Button {
-            text: root.workspace.strings.t(!root.historyEnabled ? "workspace.settings" : "workspace.history")
-            focusable: true
-            fontSize: Style.font.caption
-            onClicked: root.workspace.navigate(!root.historyEnabled ? "settings" : "history")
-            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
-        }
     }
 
-    RowLayout {
+    MapSection {
         Layout.fillWidth: true
         visible: root.showInsights
-        MapGlyph { icon: "chart"; color: root.workspace.insightColor }
+        title: root.workspace.strings.t("journey.activity")
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.space(8)
+            Repeater {
+                model: [
+                    {label: "year.scans", icon: "history", value: root.summary.scans},
+                    {label: "year.days", icon: "calendar", value: root.summary.days},
+                    {label: "year.apps", icon: "apps", value: root.summary.apps}
+                ]
+                ColumnLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.alignment: Qt.AlignTop
+                    spacing: Style.space(3)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        MapGlyph { icon: modelData.icon; color: root.workspace.insightColor }
+                        MapText {
+                            Layout.fillWidth: true
+                            text: root.workspace.number(modelData.value)
+                            font.pixelSize: Style.font.body
+                            font.weight: Font.DemiBold
+                            color: root.workspace.insightColor
+                        }
+                    }
+                    MapText {
+                        Layout.fillWidth: true
+                        text: root.workspace.strings.t(modelData.label)
+                        font.pixelSize: Style.font.caption
+                        color: Util.alpha(Color.popups.text, 0.65)
+                        wrapMode: Text.Wrap
+                    }
+                }
+            }
+        }
         MapText {
             Layout.fillWidth: true
-            text: root.workspace.strings.t("year.insights")
-            font.weight: Font.DemiBold
+            text: root.workspace.strings.t("year.scanScopes").arg(root.workspace.number(root.summary.overviewScans))
+                .arg(root.workspace.number(root.summary.deepScans))
+            font.pixelSize: Style.font.caption
+            color: Util.alpha(Color.popups.text, 0.65)
+            wrapMode: Text.Wrap
         }
     }
-    GridLayout {
+    MapSection {
         Layout.fillWidth: true
         visible: root.showInsights
-        columns: 2
-        columnSpacing: Style.space(6)
-        rowSpacing: Style.space(6)
-        MapMetricCard {
+        title: root.workspace.strings.t("year.insights")
+        ColumnLayout {
             Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.peak")
-            value: root.workspace.size(root.summary.peak ? root.summary.peak.bytes : null,
-                root.summary.peak && root.summary.peak.partial)
-            detail: root.observationDetail(root.summary.peak)
-            icon: "chart"
-            tint: root.workspace.insightColor
+            spacing: Style.space(2)
+            Repeater {
+                model: root.insights
+                Ui.Button {
+                    id: insightButton
+                    required property var modelData
+                    required property int index
+                    Layout.fillWidth: true
+                    implicitHeight: Math.max(Style.space(36), insightContent.implicitHeight + Style.space(12))
+                    selected: root.selectedInsight === index
+                    focusable: true
+                    text: ""
+                    Accessible.name: root.workspace.strings.t(modelData.label) + ": " + modelData.value
+                    Accessible.expanded: root.selectedInsight === index
+                    onClicked: {
+                        root.selectedInsight = root.selectedInsight === index ? -1 : index;
+                        if (root.selectedInsight >= 0)
+                            Qt.callLater(function() { root.workspace.reveal(insightExplanation); });
+                    }
+                    onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                    RowLayout {
+                        id: insightContent
+                        anchors.fill: parent
+                        anchors.margins: Style.space(6)
+                        spacing: Style.space(7)
+                        MapGlyph { icon: insightButton.modelData.icon; color: root.workspace.insightColor }
+                        MapText {
+                            Layout.fillWidth: true
+                            text: root.workspace.strings.t(insightButton.modelData.label)
+                            font.pixelSize: Style.font.caption
+                            wrapMode: Text.Wrap
+                        }
+                        MapText {
+                            Layout.maximumWidth: insightButton.width * 0.4
+                            text: insightButton.modelData.value
+                            font.pixelSize: Style.font.bodySmall
+                            font.weight: Font.DemiBold
+                            color: root.workspace.insightColor
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
+            }
         }
-        MapMetricCard {
+        MapText {
+            id: insightExplanation
             Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.largestApp")
-            value: root.workspace.size(root.summary.largestApp ? root.summary.largestApp.bytes : null,
-                root.summary.largestApp && root.summary.largestApp.partial)
-            detail: root.observationDetail(root.summary.largestApp)
-            icon: "apps"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.largestCache")
-            value: root.workspace.size(root.summary.largestCache ? root.summary.largestCache.bytes : null,
-                root.summary.largestCache && root.summary.largestCache.partial)
-            detail: root.observationDetail(root.summary.largestCache)
-            icon: "cache"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.rise")
-            value: root.summary.rise ? root.workspace.strings.t("workspace.positive").arg(root.workspace.size(root.summary.rise.delta))
-                : root.workspace.strings.t("workspace.noDelta")
-            detail: root.changeDetail(root.summary.rise)
-            icon: "growth"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.fall")
-            value: root.summary.fall ? root.workspace.strings.t("workspace.negative").arg(root.workspace.size(-root.summary.fall.delta))
-                : root.workspace.strings.t("workspace.noDelta")
-            detail: root.changeDetail(root.summary.fall)
-            icon: "shrink"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.scans")
-            value: root.workspace.number(root.summary.scans)
-            detail: root.workspace.strings.t("year.scanScopes").arg(root.workspace.number(root.summary.overviewScans))
-                .arg(root.workspace.number(root.summary.deepScans))
-            icon: "history"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.days")
-            value: root.workspace.number(root.summary.days)
-            detail: root.workspace.strings.t("year.daysDetail")
-            icon: "calendar"
-            tint: root.workspace.insightColor
-        }
-        MapMetricCard {
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
-            label: root.workspace.strings.t("year.apps")
-            value: root.workspace.number(root.summary.apps)
-            detail: root.workspace.strings.t("year.appsDetail")
-            icon: "apps"
-            tint: root.workspace.insightColor
+            visible: root.selectedInsight >= 0
+            text: root.selectedInsight < 0 ? "" : root.selectedInsight > 2
+                ? root.changeDetail(root.insights[root.selectedInsight].sample)
+                : root.observationDetail(root.insights[root.selectedInsight].sample)
+            font.pixelSize: Style.font.caption
+            color: Util.alpha(Color.popups.text, 0.7)
+            wrapMode: Text.Wrap
         }
     }
 
     Ui.Button {
         Layout.fillWidth: true
-        text: root.workspace.strings.t(root.infoOpen ? "year.hideBasis" : "year.showBasis")
-        selected: root.infoOpen
+        text: root.workspace.strings.t("workspace.history")
         focusable: true
-        onClicked: root.toggleInfo()
+        fontSize: Style.font.caption
+        onClicked: root.workspace.navigate("history")
         onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
     }
     MapSection {
@@ -329,6 +355,13 @@ ColumnLayout {
         MapText {
             Layout.fillWidth: true
             text: root.workspace.strings.t("year.measurementBasis")
+            font.pixelSize: Style.font.caption
+            color: Util.alpha(Color.popups.text, 0.7)
+            wrapMode: Text.Wrap
+        }
+        MapText {
+            Layout.fillWidth: true
+            text: root.workspace.strings.t("year.daysDetail") + "\n" + root.workspace.strings.t("year.appsDetail")
             font.pixelSize: Style.font.caption
             color: Util.alpha(Color.popups.text, 0.7)
             wrapMode: Text.Wrap

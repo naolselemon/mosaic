@@ -52,7 +52,7 @@ ColumnLayout {
     MapText {
         Layout.fillWidth: true
         visible: root.infoOpen
-        text: root.workspace.strings.t("workspace.historyBasis") + "\n" + root.workspace.strings.t("visual.historyWindow")
+        text: root.workspace.strings.t("workspace.historyBasis") + "\n" + root.workspace.strings.t("visual.snapshotLegend") + "\n" + root.workspace.strings.t("visual.historyWindow")
         font.pixelSize: Style.font.caption
         color: Util.alpha(Color.popups.text, 0.7)
         wrapMode: Text.Wrap
@@ -67,6 +67,7 @@ ColumnLayout {
                 text: root.workspace.strings.t(modelData === "overview" ? "overview" : "workspace.deep")
                 selected: root.mode === modelData
                 focusable: true
+                radius: Style.space(10)
                 onClicked: { root.mode = modelData; if (modelData === "deep" && !root.appId) root.pickerOpen = true; }
                 onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
             }
@@ -127,12 +128,17 @@ ColumnLayout {
         font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
-    MapHistoryChart {
+    MapSection {
         Layout.fillWidth: true
         visible: root.mode !== "deep" || root.appId !== ""
-        workspace: root.workspace
-        appId: root.appId
-        mode: root.mode
+        title: root.workspace.strings.t(root.mode === "deep" ? "journey.deepTimeline" : "journey.overviewTimeline")
+        MapHistoryChart {
+            Layout.fillWidth: true
+            workspace: root.workspace
+            appId: root.appId
+            mode: root.mode
+            compact: true
+        }
     }
     RowLayout {
         Layout.fillWidth: true
@@ -151,14 +157,16 @@ ColumnLayout {
             onClicked: root.workspace.navigate("year")
             onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
         }
-        MapIconButton {
-            icon: "settings"
-            label: root.workspace.strings.t("workspace.settings")
-            onClicked: root.workspace.navigate("settings")
-            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+    }
+    RowLayout {
+        Layout.fillWidth: true
+        MapGlyph { icon: "growth"; color: root.workspace.insightColor }
+        MapText {
+            Layout.fillWidth: true
+            text: root.workspace.strings.t("journey.comparisons")
+            font.weight: Font.DemiBold
         }
     }
-    MapText { Layout.fillWidth: true; text: root.workspace.strings.t("workspace.comparisons"); font.weight: Font.DemiBold }
     MapText {
         Layout.fillWidth: true
         visible: !root.growth.length
@@ -167,31 +175,44 @@ ColumnLayout {
         wrapMode: Text.Wrap
         color: Util.alpha(Color.popups.text, 0.7)
     }
-    GridLayout {
+    ColumnLayout {
         Layout.fillWidth: true
-        columns: 2
-        columnSpacing: Style.space(7)
-        rowSpacing: Style.space(7)
+        spacing: Style.space(5)
         Repeater {
             model: root.growth
-            ColumnLayout {
+            MapSection {
                 id: comparison
                 required property var modelData
                 property bool expanded: false
                 Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.alignment: Qt.AlignTop
-                spacing: Style.space(4)
-                MapMetricCard {
+                RowLayout {
                     Layout.fillWidth: true
-                    icon: comparison.modelData.comparable ? comparison.modelData.delta < 0 ? "shrink" : "growth" : "info"
-                    label: comparison.modelData.name
-                    value: root.delta(comparison.modelData)
-                    detail: root.workspace.strings.t(comparison.modelData.comparable ? "visual.comparable" : "visual.notComparable")
-                    tint: comparison.modelData.comparable ? root.workspace.insightColor : Util.alpha(Color.popups.text, 0.65)
-                    actionable: true
-                    onClicked: comparison.expanded = !comparison.expanded
-                    onFocused: function(item) { root.workspace.reveal(item); }
+                    MapGlyph {
+                        icon: !comparison.modelData.comparable ? "info" : comparison.modelData.delta === 0 ? "check"
+                            : comparison.modelData.delta < 0 ? "shrink" : "growth"
+                        color: comparison.modelData.comparable ? root.workspace.insightColor : Util.alpha(Color.popups.text, 0.6)
+                    }
+                    MapText {
+                        Layout.fillWidth: true
+                        text: comparison.modelData.name
+                        font.pixelSize: Style.font.bodySmall
+                        wrapMode: Text.Wrap
+                    }
+                    MapText {
+                        Layout.maximumWidth: comparison.width * 0.4
+                        text: root.delta(comparison.modelData)
+                        color: comparison.modelData.comparable ? root.workspace.insightColor : Util.alpha(Color.popups.text, 0.65)
+                        font.pixelSize: Style.font.bodySmall
+                        font.weight: Font.DemiBold
+                        wrapMode: Text.Wrap
+                    }
+                    MapIconButton {
+                        icon: "info"
+                        label: root.workspace.strings.t(comparison.modelData.comparable ? "visual.comparable" : "visual.notComparable")
+                        selected: comparison.expanded
+                        onClicked: comparison.expanded = !comparison.expanded
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                    }
                 }
                 MapText {
                     Layout.fillWidth: true

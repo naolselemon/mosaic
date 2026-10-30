@@ -89,7 +89,9 @@ ColumnLayout {
         Layout.fillWidth: true
         MapText {
             Layout.fillWidth: true
-            text: root.workspace.strings.tn("workspace.mappingCount", root.mappings.length).arg(root.workspace.number(root.mappings.length))
+            text: root.workspace.view
+                ? root.workspace.strings.tn("journey.customMappings", root.mappings.length).arg(root.workspace.number(root.mappings.length))
+                : root.workspace.strings.t("journey.mappingsPending")
             font.pixelSize: Style.font.bodySmall
             font.weight: Font.DemiBold
             wrapMode: Text.Wrap
@@ -122,23 +124,17 @@ ColumnLayout {
     }
     MapSection {
         Layout.fillWidth: true
-        visible: !root.mappings.length && !root.formOpen
-        title: root.workspace.strings.t("workspace.noMappings")
-        MapGlyph { Layout.alignment: Qt.AlignHCenter; icon: "link"; color: Color.accent; font.pixelSize: Style.space(32) }
-        MapText {
+        visible: !!root.workspace.view && !root.mappings.length && !root.formOpen
+        RowLayout {
             Layout.fillWidth: true
-            text: root.workspace.strings.t("preferences.mappingEmpty")
-            font.pixelSize: Style.font.bodySmall
-            wrapMode: Text.Wrap
-            horizontalAlignment: Text.AlignHCenter
-        }
-        Ui.Button {
-            Layout.fillWidth: true
-            text: root.workspace.strings.t("workspace.addMapping")
-            enabled: root.workspace.ready && !root.workspace.busy
-            focusable: true
-            onClicked: root.openForm(null)
-            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+            MapGlyph { icon: "link"; color: Color.accent }
+            MapText {
+                Layout.fillWidth: true
+                text: root.workspace.strings.t("journey.mappingEmpty")
+                font.pixelSize: Style.font.bodySmall
+                color: Util.alpha(Color.popups.text, 0.7)
+                wrapMode: Text.Wrap
+            }
         }
     }
     Repeater {
@@ -147,32 +143,68 @@ ColumnLayout {
             id: mappingCard
             required property var modelData
             readonly property bool confirming: root.removeId === modelData.id && root.removePath === modelData.path
+            property bool expanded: false
             Layout.fillWidth: true
-            title: root.workspace.appName(modelData.id)
             RowLayout {
                 Layout.fillWidth: true
-                MapGlyph { icon: "link"; color: Color.accent; font.pixelSize: Style.font.body }
-                MapText { Layout.fillWidth: true; text: root.workspace.strings.t("compact.user"); color: Color.accent; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
-                MapText { text: root.workspace.strings.t("compact." + mappingCard.modelData.category); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.7) }
+                MapGlyph {
+                    icon: mappingCard.modelData.category === "state" ? "history" : mappingCard.modelData.category
+                    color: Color.accent
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Style.space(2)
+                    MapText {
+                        Layout.fillWidth: true
+                        text: root.workspace.appName(mappingCard.modelData.id)
+                        font.pixelSize: Style.font.bodySmall
+                        font.weight: Font.DemiBold
+                        wrapMode: Text.Wrap
+                    }
+                    MapText {
+                        Layout.fillWidth: true
+                        text: root.workspace.strings.t("compact." + mappingCard.modelData.category)
+                        font.pixelSize: Style.font.caption
+                        color: Util.alpha(Color.popups.text, 0.65)
+                        wrapMode: Text.Wrap
+                    }
+                }
+                MapIconButton {
+                    icon: "info"
+                    label: root.workspace.strings.t("journey.mappingDetails")
+                    selected: mappingCard.expanded || mappingCard.confirming
+                    enabled: !mappingCard.confirming
+                    onClicked: mappingCard.expanded = !mappingCard.expanded
+                    onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                }
             }
             MapText {
                 Layout.fillWidth: true
                 text: mappingCard.modelData.path
                 font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.WrapAnywhere
-                maximumLineCount: mappingCard.confirming ? 1000 : 2
+                maximumLineCount: mappingCard.expanded || mappingCard.confirming ? 1000 : 2
                 elide: Text.ElideMiddle
             }
             MapText {
                 Layout.fillWidth: true
+                visible: mappingCard.expanded || mappingCard.confirming
                 text: mappingCard.modelData.id
                 font.pixelSize: Style.font.caption
                 color: Util.alpha(Color.popups.text, 0.6)
                 wrapMode: Text.WrapAnywhere
             }
+            MapText {
+                Layout.fillWidth: true
+                visible: mappingCard.expanded
+                text: root.workspace.strings.t("journey.mappingEvidence")
+                font.pixelSize: Style.font.caption
+                color: Util.alpha(Color.popups.text, 0.65)
+                wrapMode: Text.Wrap
+            }
             RowLayout {
                 Layout.fillWidth: true
-                visible: !mappingCard.confirming
+                visible: mappingCard.expanded && !mappingCard.confirming
                 Ui.Button {
                     text: root.workspace.strings.t("workspace.edit")
                     focusable: true

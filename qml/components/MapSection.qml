@@ -9,7 +9,7 @@ Rectangle {
     default property alias content: body.data
     implicitWidth: Style.space(320)
     implicitHeight: layout.implicitHeight + Style.space(20)
-    radius: Style.cornerRadius
+    radius: Style.space(10)
     color: Util.alpha(Color.popups.text, 0.045)
 
     ColumnLayout {

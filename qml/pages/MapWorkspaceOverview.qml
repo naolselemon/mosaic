@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Commons
 import qs.Ui as Ui
-import "../lib/ViewModel.js" as Model
 import "../components"
 
 ColumnLayout {
@@ -11,16 +10,72 @@ ColumnLayout {
     readonly property bool typing: false
     property bool infoOpen: false
     readonly property var view: workspace.view
-    readonly property var service: workspace.service
     readonly property var cache: view ? view.insights.cache : []
     readonly property var growing: view ? view.insights.growing : []
-    readonly property bool measured: !!service && service.ready && ((!service.apps.length && !incomplete) || service.apps.some(function(app) {
-        return (app.paths || []).some(function(path) { return path.confidence === "known" && path.bytes !== null && path.bytes !== undefined; });
-    }))
-    readonly property bool incomplete: !!service && (service.partial || service.limited || service.busy)
-    readonly property var categories: ["config", "cache", "data", "state"]
+    readonly property var pulse: {
+        var result = {grew: 0, shrank: 0, stable: 0, compared: 0, unavailable: 0};
+        var rows = view ? view.growth : [];
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (row.mode !== "overview") continue;
+            if (!row.comparable) { result.unavailable++; continue; }
+            result.compared++;
+            if (row.delta > 0) result.grew++;
+            else if (row.delta < 0) result.shrank++;
+            else result.stable++;
+        }
+        return result;
+    }
+    readonly property var directions: [
+        {key: "grew", icon: "growth", count: pulse.grew, tint: workspace.insightColor},
+        {key: "shrank", icon: "shrink", count: pulse.shrank, tint: workspace.heroColor},
+        {key: "stable", icon: "check", count: pulse.stable, tint: Util.alpha(Color.popups.text, 0.65)}
+    ]
+    readonly property bool showHighlights: !workspace.prefs || workspace.prefs.showHighlights
     function toggleInfo() { infoOpen = !infoOpen; }
-    spacing: Style.space(9)
+    spacing: Style.space(8)
+
+    component Route: Ui.Button {
+        id: route
+        required property string destination
+        required property string label
+        required property string symbol
+        property string value: ""
+        Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        implicitHeight: Math.max(Style.space(40), routeContent.implicitHeight + Style.space(16))
+        text: ""
+        focusable: true
+        radius: Style.space(10)
+        background: Util.alpha(root.workspace.insightColor, 0.065)
+        foreground: Color.popups.text
+        accent: root.workspace.insightColor
+        Accessible.name: label
+        Accessible.description: value
+        onClicked: root.workspace.navigate(destination)
+        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+        RowLayout {
+            id: routeContent
+            anchors.centerIn: parent
+            width: parent.width - Style.space(16)
+            spacing: Style.space(6)
+            MapGlyph { icon: route.symbol; color: root.workspace.insightColor; font.pixelSize: Style.font.caption }
+            MapText {
+                Layout.fillWidth: true
+                text: route.label
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignLeft
+            }
+            MapText {
+                visible: route.value !== ""
+                text: route.value
+                font.pixelSize: Style.font.bodySmall
+                font.weight: Font.DemiBold
+                color: root.workspace.insightColor
+            }
+        }
+    }
 
     MapText {
         Layout.fillWidth: true
@@ -32,112 +87,104 @@ ColumnLayout {
     }
     MapSection {
         Layout.fillWidth: true
-        title: root.workspace.strings.t("workspace.mappedData")
+        radius: Style.space(12)
         RowLayout {
             Layout.fillWidth: true
+            spacing: Style.space(4)
             MapText {
                 Layout.fillWidth: true
-                text: root.measured ? root.workspace.size(root.service.mappedBytes, root.incomplete) : root.workspace.strings.t("size.unknown")
-                font.pixelSize: Style.font.heading * 1.45
+                text: root.workspace.strings.t("dashboard.changes")
+                font.pixelSize: Style.font.caption
                 font.weight: Font.DemiBold
-                color: root.workspace.heroColor
-                elide: Text.ElideRight
+                wrapMode: Text.Wrap
             }
-            MapGlyph { icon: "chart"; font.pixelSize: Style.font.heading; color: root.workspace.heroColor }
+            MapIconButton {
+                icon: "history"
+                label: root.workspace.strings.t("workspace.history")
+                onClicked: root.workspace.navigate("history")
+                onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+            }
+            MapIconButton {
+                icon: "calendar"
+                label: root.workspace.strings.t("visual.yearInsights")
+                onClicked: root.workspace.navigate("year")
+                onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+            }
         }
-        MapText {
+        RowLayout {
             Layout.fillWidth: true
-            visible: root.incomplete
-            text: root.workspace.strings.t("visual.partialCoverage")
-            color: Color.urgent
-            font.pixelSize: Style.font.caption
-            wrapMode: Text.Wrap
-        }
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: Style.space(7)
-            Rectangle { anchors.fill: parent; color: Util.alpha(Color.popups.text, 0.08); radius: Style.space(3) }
-            Row {
-                anchors.fill: parent
-                Repeater {
-                    model: root.categories
-                    Rectangle {
-                        required property string modelData
-                        required property int index
-                        height: parent.height
-                        width: root.measured && root.service.mappedBytes > 0 ? parent.width * root.service.categories[modelData] / root.service.mappedBytes : 0
-                        color: root.workspace.palette[Model.categoryKeys.indexOf(modelData)]
+            spacing: Style.space(8)
+            Repeater {
+                model: root.directions
+                ColumnLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    spacing: Style.space(3)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Style.space(5)
+                        MapGlyph { icon: modelData.icon; color: modelData.tint; font.pixelSize: Style.font.caption }
+                        MapText {
+                            Layout.fillWidth: true
+                            text: root.pulse.compared ? root.workspace.number(modelData.count) : root.workspace.strings.t("workspace.noDelta")
+                            font.pixelSize: Style.font.heading * 1.2
+                            font.weight: Font.DemiBold
+                            color: modelData.tint
+                        }
+                    }
+                    MapText {
+                        Layout.fillWidth: true
+                        text: root.workspace.strings.t("dashboard." + modelData.key)
+                        font.pixelSize: Style.font.caption
+                        color: Util.alpha(Color.popups.text, 0.7)
+                        wrapMode: Text.Wrap
                     }
                 }
             }
         }
-        GridLayout {
-            Layout.fillWidth: true
-            columns: 2
-            columnSpacing: Style.space(8)
-            rowSpacing: Style.space(3)
-            Repeater {
-                model: root.categories
-                RowLayout {
-                    required property string modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    spacing: Style.space(4)
-                    Rectangle { implicitWidth: Style.space(5); implicitHeight: Style.space(5); radius: width / 2; color: root.workspace.palette[Model.categoryKeys.indexOf(modelData)] }
-                    MapText { Layout.fillWidth: true; text: root.workspace.strings.t("compact." + modelData); font.pixelSize: Style.font.caption; elide: Text.ElideRight }
-                    MapText { text: root.measured ? root.workspace.size(root.service.categories[modelData], root.incomplete) : root.workspace.strings.t("size.unknown"); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.7) }
-                }
-            }
-        }
         MapText {
             Layout.fillWidth: true
-            text: root.service ? root.workspace.strings.t("visual.scanCoverage").arg(root.workspace.number(root.service.completedApps)).arg(root.workspace.number(root.service.apps.length)) : root.workspace.strings.t("size.unknown")
+            text: !root.view ? root.workspace.strings.t("dashboard.awaiting")
+                : root.pulse.compared ? root.workspace.strings.tn("dashboard.compared", root.pulse.compared).arg(root.workspace.number(root.pulse.compared))
+                : root.workspace.strings.t(root.view.settings.historyEnabled ? "dashboard.noComparison" : "dashboard.historyOff")
             font.pixelSize: Style.font.caption
             color: Util.alpha(Color.popups.text, 0.6)
             wrapMode: Text.Wrap
         }
-    }
-    RowLayout {
-        Layout.fillWidth: true
-        MapText { Layout.fillWidth: true; text: root.workspace.strings.t("workspace.recentScans"); font.weight: Font.DemiBold }
-        Ui.Button {
-            text: root.workspace.strings.t("visual.yearEntry").arg(new Date().toLocaleDateString(Qt.locale(I18n.formatLocale), "yyyy"))
-            focusable: true
-            fontSize: Style.font.caption
-            horizontalPadding: Style.space(6)
-            onClicked: root.workspace.navigate("year")
-            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
-        }
-        MapIconButton {
-            icon: "history"
-            label: root.workspace.strings.t("workspace.history")
-            onClicked: root.workspace.navigate("history")
-            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+        MapText {
+            Layout.fillWidth: true
+            visible: root.infoOpen && root.pulse.unavailable > 0
+            text: root.workspace.strings.tn("dashboard.unavailable", root.pulse.unavailable).arg(root.workspace.number(root.pulse.unavailable))
+            font.pixelSize: Style.font.caption
+            color: Util.alpha(Color.popups.text, 0.65)
+            wrapMode: Text.Wrap
         }
     }
-    MapHistoryChart { Layout.fillWidth: true; workspace: root.workspace; allowDetails: false; compact: true }
     GridLayout {
         Layout.fillWidth: true
-        visible: !root.workspace.prefs || root.workspace.prefs.showHighlights
+        visible: root.showHighlights
         columns: 2
-        columnSpacing: Style.space(7)
-        rowSpacing: Style.space(7)
+        columnSpacing: Style.space(8)
+        rowSpacing: Style.space(8)
         Repeater {
             model: ["cache", "growing", "installations", "leftovers"]
             MapMetricCard {
                 required property string modelData
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 Layout.preferredWidth: 1
+                Layout.alignment: Qt.AlignVCenter
+                radius: Style.space(10)
                 icon: modelData === "growing" ? "growth" : modelData === "installations" ? "package" : modelData
                 label: root.workspace.strings.t("workspace." + modelData)
                 value: modelData === "cache" ? root.cache.length ? root.workspace.size(root.cache[0].bytes, root.cache[0].partial) : root.workspace.strings.t("size.unknown")
                     : modelData === "growing" ? root.growing.length ? root.workspace.strings.t("workspace.positive").arg(root.workspace.size(root.growing[0].delta)) : root.workspace.strings.t("workspace.noDelta")
                     : modelData === "installations" ? root.view && root.view.installations.knownApps > 0 ? root.workspace.size(root.view.installations.totalBytes) : root.workspace.strings.t("size.unknown")
-                    : root.workspace.ready && root.view && (!root.view.warnings.length || root.view.leftovers.length > 0) ? root.workspace.number(root.view.leftovers.length) : root.workspace.strings.t("size.unknown")
-                detail: modelData === "cache" ? root.cache.length ? root.cache[0].name : root.workspace.strings.t("workspace.noCache")
-                    : modelData === "growing" ? root.growing.length ? root.growing[0].name : root.workspace.strings.t("workspace.noComparableShort")
-                    : root.workspace.strings.t(modelData === "installations" ? "workspace.uniquePackages" : "workspace.noLauncher")
+                    : root.view && (root.view.leftovers.length > 0 || root.view.refreshedAt > 0 && !root.view.warnings.length) ? root.workspace.number(root.view.leftovers.length) : root.workspace.strings.t("size.unknown")
+                detail: modelData === "cache" ? root.cache.length ? root.cache[0].name : root.workspace.strings.t("dashboard.noCache")
+                    : modelData === "growing" ? root.growing.length ? root.workspace.strings.t("dashboard.growthSource").arg(root.growing[0].name).arg(root.workspace.strings.t(root.growing[0].mode === "deep" ? "workspace.deep" : "overview")) : root.workspace.strings.t("workspace.noComparableShort")
+                    : root.workspace.strings.t(modelData === "installations" ? "dashboard.packageBasis" : "dashboard.reviewOnly")
                 tint: root.workspace.insightColor
                 actionable: true
                 onClicked: root.workspace.navigate(modelData)
@@ -147,31 +194,41 @@ ColumnLayout {
     }
     GridLayout {
         Layout.fillWidth: true
-        columns: 3
-        columnSpacing: Style.space(4)
-        rowSpacing: Style.space(4)
+        visible: !root.showHighlights
+        columns: 2
+        columnSpacing: Style.space(8)
+        rowSpacing: Style.space(8)
         Repeater {
-            model: root.workspace.prefs && !root.workspace.prefs.showHighlights ? ["cache", "growing", "installations", "leftovers", "mappings", "alerts"] : ["history", "mappings", "alerts"]
-            Ui.Button {
+            model: ["cache", "growing", "installations", "leftovers"]
+            Route {
                 required property string modelData
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                text: root.workspace.strings.t("visual.nav." + modelData)
-                focusable: true
-                fontSize: Style.font.caption
-                horizontalPadding: Style.space(4)
-                onClicked: root.workspace.navigate(modelData)
-                onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                destination: modelData
+                symbol: modelData === "growing" ? "growth" : modelData === "installations" ? "package" : modelData
+                label: root.workspace.strings.t("workspace." + modelData)
             }
         }
     }
-    Ui.Button {
+    RowLayout {
         Layout.fillWidth: true
+        spacing: Style.space(8)
+        Route {
+            destination: "mappings"
+            symbol: "link"
+            label: root.workspace.strings.t("dashboard.mappings")
+            value: root.view ? root.workspace.number(root.view.mappings.length) : root.workspace.strings.t("workspace.noDelta")
+        }
+        Route {
+            destination: "alerts"
+            symbol: "alert"
+            label: root.workspace.strings.t("dashboard.alerts")
+            value: root.view ? root.workspace.number(root.view.alerts.length) : root.workspace.strings.t("workspace.noDelta")
+        }
+    }
+    Route {
         visible: !!root.view && root.view.warnings.length > 0
-        text: root.workspace.strings.tn("workspace.warningCount", root.view ? root.view.warnings.length : 0).arg(root.workspace.number(root.view ? root.view.warnings.length : 0))
-        focusable: true
-        fontSize: Style.font.caption
-        onClicked: root.workspace.navigate("notes")
-        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+        destination: "notes"
+        symbol: "info"
+        label: root.workspace.strings.t("dashboard.notes")
+        value: root.view ? root.workspace.number(root.view.warnings.length) : ""
     }
 }

@@ -6,37 +6,17 @@ A read-only Omarchy shell plugin that shows where desktop applications keep thei
 
 The **Reveal** mark frames a visible centre with four geometric pieces: a visual identity for making application storage visible. The live shell icon follows the current theme; the overview and About mark use the selected chart accent. Page-specific navigation icons remain distinct.
 
-### 2.8.2
+## v0.1.0 — First release
 
-The circular refresh icon inside **Check now** rotates while an update check runs, then stops in its resting position. It pauses when the popup is closed or animations are disabled; the rounded button and default-page reopening behavior are unchanged.
+The first tagged GitHub release of Mosaic. Earlier `2.x` version numbers marked internal development iterations, not published releases.
 
-### 2.8.1
+- Compact storage overview with an interactive category chart, application search and evidence-backed location details.
+- Category explorers and a storage dashboard covering history, annual insights, cache, growth, installations, possible leftovers, mappings and alerts.
+- Visual scan details that distinguish measured sizes, partial results and unknown values.
+- Theme-aware settings, Contribution and About sections, animated logos, simple page-icon rotations and a slower typing entrance. Reduced-motion preferences are respected.
+- Protected GitHub updates: prepare and validate first, then install only after approval of the exact commit and shell restart. Automatic checks are opt-in.
 
-The update-check action is a rounded pill with a circular leading refresh icon. Each fresh popup opening starts on the compact default overview, clearing the previous page, app selection, search filter and expanded state without changing saved preferences or scan results. Rapid reopening during a page transition also returns directly to the overview.
-
-### 2.8.0
-
-Stable releases can now be prepared and validated without changing the running plugin, then installed only after approval of an exact commit and whole-shell restart. An independent worker preserves activation and backs up Mosaic data, verifies the new runtime, and uses guarded recovery on failure. History, growth, data management and update preferences now use Contribution-style leading icons with aligned descriptions.
-
-### 2.7.1
-
-Hover the default-page or About logo to replay its animation once. Pointer movement within the logo and quick re-entry do not interrupt an active sequence; clicks and reduced-motion preferences keep their existing behavior.
-
-### 2.7.0
-
-Only the Mosaic logo animates: four shutters separate, unfold in staggered 3D, and assemble around the turning center over 760 ms. About replays on each scroll re-entry; the default-page logo uses the same sequence on opening or returning. Settings now includes explicit GitHub version checks and an optional, default-off daily check.
-
-### 2.6.0
-
-Reference-style Contribution rows and a centered About card now complete Settings. About opens with a short, layered book-page entrance when scrolled into view.
-
-### 2.5.1
-
-The repository now separates QML entry points, reusable components, pages, JavaScript models, Python backend modules, and language-specific test suites. Imports, resource paths, development deployment, and test commands follow that layout. Plugin identity, stored-data locations, and behavior are unchanged.
-
-### 2.5.0
-
-App Data Map is now **Mosaic**, with the plugin ID `naolselemon.mosaic`, the Reveal logo, and a matching notification icon. The storage-analysis features and privacy model are unchanged. Existing local builds need the one-time namespace migration described below; Mosaic does not maintain an old-ID alias or silently read the old data directory.
+Existing `2.x` development copies need a one-time [manual deployment](#installation-and-development) of `v0.1.0`; the updater's downgrade protection remains enabled. Mosaic's plugin ID and separate settings/history directories are unchanged.
 
 ## Use
 
@@ -44,13 +24,15 @@ Click the Mosaic Reveal icon in the bar to open the panel. The first open starts
 
 The compact overview pairs a mapped-size donut with its category legend and shows up to five application rows, sorted by mapped size. The popup is 360 theme-scaled units wide and normally capped at 480 units high. The triangle beside Close expands the overview up to the available screen height, or condenses it again; lists longer than the screen remain scrollable. On application details and dashboard pages, that triangle returns to the previous page instead. Search hides the chart to make room for results; pressing the search icon again clears the filter and restores the normal overview. Its visual layout takes inspiration from [Screen Time](https://github.com/ax1g/quickshell-screentime-plugin), using Omarchy's own components.
 
+The Mosaic name types once on each fresh popup opening, with a temporary caret and stable header geometry. It appears immediately when plugin or global animations are disabled. Leaving the overview completes the name; returning from another page does not restart the typing sequence. A small gap separates the header controls from the chart.
+
 The donut settles from a short 3D opening tilt. Hover a section or hover/Tab to a category to tilt its arc gently around the **Y axis**, highlight it, and show its category, size and share of **measured** bytes in the center. Each arc tilts around its own midpoint rather than dragging the ring away from the pointer. Click an arc or its legend entry to explore that category; a focused legend entry also accepts Enter or Space. The hole and visible gaps are not hover or click targets. Percentages are not shares of the whole disk or of unknown app data. The center stays upright; animations finish rather than running continuously. Disabling **Animations**, or Omarchy's global motion setting, retains information and highlighting without tilt.
 
 The **category explorer** is one reusable page with Config, Data, Cache and State tabs, matching logos/colors, a measured total and a proportional app treemap. Tile area represents known measured bytes in the selected category: up to seven apps plus an **Other apps** group, without inflating tiny values. Select a tile to inspect only that app's locations in the selected category. **All apps** also reaches tiny, zero-byte and unmeasured entries; unknown is never displayed as measured zero. Possible/shared candidate matches are disclosed separately and excluded from owned totals; these are matches, not counts of unique physical locations. The page uses the overview snapshot, not a deeper scan or saved history. Its refresh button rescans the overview; tabs reset category-specific selections, and Settings/back retains the selected category.
 
 Select an application to inspect its locations. The arrow on a location expands its largest immediate subfolders; its info icon opens a compact ownership/status card and numeric scan notes. **Evidence & paths** reveals raw matching evidence, full paths, timestamps and bounded skipped-path samples only when requested. These ownership and breakdown disclosures are mutually exclusive. Folder and copy icons act on roots and displayed subfolders; their tooltips identify each action. **Open folder** opens a directory in the file manager, or the parent of a configuration file. **Copy path** copies the absolute path without shell escaping.
 
-The first-page gear opens Settings, and the keyboard icon in the overview footer opens **Keyboard shortcuts**; `?` also opens that page. **Scan details** is available only from the overview's scan-time info icon, not Settings or application details. These pages use animated navigation and return with their logo, triangle or Escape. Scan details shows an overview-only health display: mapped bytes, candidate-match status segments, snapshot time and expandable scan-note cards. Its technical cards explain scope, coverage, logical-byte accounting and unknown contents one topic at a time. There is no top **Measured so far** caption on that page; `≥`, unknown values and the lower-bound explanation retain measurement uncertainty. Candidate matches and reported skipped encounters are not counts of unique physical files or disk coverage.
+The first-page gear opens Settings, and the keyboard icon in the overview footer opens **Keyboard shortcuts**; `?` also opens that page. **Scan details** is available only from the overview's scan-time info icon, not Settings or application details. These pages use animated navigation and return with their logo, triangle or Escape. Scan details starts with a compact snapshot card, a segmented candidate-match bar and four status counts. **Scan notes** opens selectable encounter-count cards; **Technical details** opens scope, coverage, logical-byte and unknown-size topics. Each disclosure shows one selected explanation at a time and scrolls it into view. The snapshot and live progress cover only the overview scan, not a separate deep scan. `≥` and unknown values retain measurement uncertainty; candidate matches and reported skipped encounters do not represent unique physical files or disk coverage.
 
 | Shortcut | Action |
 | --- | --- |
@@ -75,7 +57,9 @@ The panel uses Omarchy's UI components, theme, font, animation settings and loca
 
 Click the Reveal logo inside the overview, or press **H**, to open the dashboard in the same compact popup. Each page has its own large logo; click it to return to the previous page. Short directional slides and logo transitions respect Omarchy's global animation setting and the plugin's **Animations** preference. Settings opens directly from the first-page gear.
 
-The dashboard uses a category strip, snapshot bars and two-column highlights. Cache and growth have separate ranked views. Installation filters separate known/unknown sizes and Arch/Flatpak groups; provenance and leftover evidence expand on demand. Unavailable comparisons remain inspectable without filling the default history page with empty cards. Chart positions follow scan order, not elapsed time.
+The dashboard answers what changed and what is worth reviewing, rather than repeating the overview's category composition. Its **Overview changes** counts come only from the latest comparable overview pair: grew, shrank and unchanged. Unknown comparisons are excluded, not counted as unchanged; without a comparable pair the counts stay unavailable. History and annual insights open from the history/calendar icons. Two-column highlights lead to cache and growth rankings, known installation sizes and possible leftovers; custom-mapping and saved-alert counts open their respective pages. Disabling highlights keeps compact links to those views.
+
+Detail pages use compact rounded rows and reveal dates, identities, provenance and other evidence on request. Installation filters separate known/unknown sizes and Arch/Flatpak groups. History owns the detailed snapshot chart and per-app comparisons, keeping overview and deep scopes separate; chart positions follow scan order, not elapsed time. Settings stays in the shared header rather than recurring in page content. Short pages shrink to their contents and grow for expanded controls, up to the normal popup height cap; longer content remains scrollable.
 
 | Feature | Behavior |
 | --- | --- |
@@ -88,7 +72,7 @@ The dashboard uses a category strip, snapshot bars and two-column highlights. Ca
 
 **History and growth:** keep up to 60 summaries within a 2 MiB state limit, plus up to 50 alert events. The oldest summaries are discarded when either bound is reached. A comparison needs the same app, scan scope, root ownership and safe accounting. Incomplete app measurements, changed mappings, uncertain hard-link accounting, or a missing baseline produce an unavailable delta—not a fabricated increase. An intervening partial scan is not skipped to manufacture a comparison. A completed app can still be comparable within an otherwise partial overview. Deep results never replace the overview's cache ranking.
 
-**Year in storage:** choose a retained year, inspect twelve monthly bars, and browse eight cards: peak measured footprint, largest observed app, largest recorded cache, biggest comparable rise/fall, scans kept, days with scans and apps observed. Each month uses its **last retained overview snapshot**, never a sum of snapshots. Click, hover or Tab to a month for its measurement; absent months remain missing, and partial measurements retain `≥`. Deep scans contribute app observations but never replace overview footprints. Annual changes require both endpoints inside the selected local calendar year and the same comparison safeguards as history. These are insights from retained records, not complete or permanently retained annual totals.
+**Year in storage:** choose a retained year and inspect twelve monthly bars. Three compact activity counts show scans kept, days with scans and apps observed. Five selectable observations show peak measured footprint, largest observed app, largest recorded cache and biggest comparable rise/fall; selecting one reveals its scope and dates, and selecting it again closes the explanation. Each month uses its **last retained overview snapshot**, never a sum of snapshots. Click, hover or Tab to a month for its measurement; absent months remain missing, and partial measurements retain `≥`. Deep scans contribute app observations but never replace overview footprints. Annual changes require both endpoints inside the selected local calendar year and the same comparison safeguards as history. These are insights from retained records, not complete or permanently retained annual totals.
 
 **Settings:** compact rounded cards group pill-shaped display switches, color swatches, history, growth notifications, mappings and local data. Toggle the home chart, dashboard highlights, yearly cards or page/chart motion independently; switches also accept Space or Enter and mirror in right-to-left layouts. Custom color and threshold fields expand only when requested. Colors follow theme/text/alert tokens or a validated opaque `#RRGGBB` value. Threshold saves acknowledge the confirmed result; invalid or failed input stays editable. The chart window can show 7, 14, 30 or 60 retained samples without changing retention. History and notification consent remain explicit; additional privacy/storage information has a compact disclosure. Appearance choices do not enable recording or notifications. Clearing history requires an explicit confirmation; Cancel leaves all saved data untouched.
 
@@ -303,6 +287,8 @@ Exercise the real shell after UI changes: expand and condense the overview with 
 For dashboard changes, use an isolated temporary directory and a temporary user mapping. Enable history/alerts explicitly, record a baseline, grow only the temporary file beyond the chosen threshold, and verify the chart, exact comparable delta, retained alert and real desktop notification. Check that replaying a scan cannot notify again and a partial measurement cannot create an exact delta. Verify Settings, mapping add/remove, history clearing, package disclosures, leftover evidence and keyboard scrolling in the live shell. Remove the test association, confirm application files were not deleted, clear only test-created history, restore previous consent settings and delete the temporary directory. Do not publish screenshots containing real paths, app inventories or unrelated desktop content.
 
 For presentation changes, verify first-page Settings, logo/triangle roundtrips and nested back navigation, all record filters, month selection and yearly cards. Hover actual donut arcs, their gaps and the center; check legend cross-highlighting and Tab focus. Click arcs and legend entries, including keyboard activation, to open the matching category. Tiny slices remain reachable through the legend. Check all four tabs, proportional tiles, All apps/Other pickers, category-only paths, separate excluded matches, selection reset, Settings/back and overview refresh. Observe opening and Y-axis hover motion, then disable animations and verify that information and clicks remain without tilt. Reopen the popup and leave/return through search and other pages to check hover reset. Exercise rounded switches with mouse and keyboard, disabled alert controls, compact swatches, custom color/threshold validation and confirmed saves, privacy disclosure, history-clear cancellation, keyboard focus/reveal and narrow/scaled layouts. Restart the shell to verify persistence without changing unrelated widget settings. Restore original consent, preferences and thresholds, remove only test mappings/history and discard private captures.
+
+For header/dashboard presentation, check the typing sequence and its stable control positions, instant full text with animations disabled, and fresh-opening versus page-return behavior. Exercise the overview-change counts with positive, negative, zero, unavailable and deep-scope rows; deep rows must not affect the overview pulse. Check unloaded, empty and populated pages, all installation-filter combinations, annual disclosure selection, mirrored fallback text and single-header Settings navigation. Short mapping/alert pages should fit their content; opening and cancelling a mapping form should grow and condense the popup without losing failed input.
 
 Keep the search field outside the resetting list model and keep the panel's key target an Item rather than a FocusScope: otherwise search updates or hidden input focus can consume detail shortcuts. Search Return/Enter handlers accept their events so a single press does not also toggle a detail breakdown.
 

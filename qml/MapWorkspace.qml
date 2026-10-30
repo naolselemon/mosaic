@@ -17,6 +17,7 @@ Item {
     readonly property bool pagePresented: presentationActive && !pageEntrance.running
     readonly property real viewportY: scroll.contentY
     readonly property real viewportHeight: scroll.height
+    implicitHeight: workspaceLayout.implicitHeight
     property string page: "dashboard"
     property string categoryKey: "data"
     readonly property var categoryTabs: ["config", "data", "cache", "state"]
@@ -80,7 +81,6 @@ Item {
         entryDirection = direction * (I18n.rightToLeft ? -1 : 1);
         if (motionEnabled) pageEntrance.start();
         else { pageLoader.x = 0; pageLoader.opacity = 1; }
-        logo.play();
         forceActiveFocus();
     }
     function openPage(target) {
@@ -141,6 +141,7 @@ Item {
     }
 
     ColumnLayout {
+        id: workspaceLayout
         anchors.fill: parent
         spacing: Style.space(6)
         RowLayout {
@@ -152,6 +153,7 @@ Item {
                 label: root.strings.t("back")
                 foreground: root.page === "category" ? root.palette[Model.categoryKeys.indexOf(root.categoryKey)] : root.heroColor
                 motionEnabled: root.motionEnabled
+                presented: root.pagePresented
                 onClicked: root.backRequested()
             }
             MapText {
@@ -185,7 +187,9 @@ Item {
         MapText {
             Layout.fillWidth: true
             visible: text !== ""
-            text: root.preferenceError || (root.service ? root.service.workspaceError || root.service.error || (root.service.workspaceBusy ? root.strings.t("workspace.loading") : root.service.busy ? root.strings.t("compact.working") : "") : root.strings.t("unavailableTitle"))
+            text: root.preferenceError || (root.service ? root.service.workspaceError || root.service.error
+                || (root.page === "diagnostics" ? "" : root.service.workspaceBusy ? root.strings.t("workspace.loading")
+                    : root.service.busy ? root.strings.t("compact.working") : "") : root.strings.t("unavailableTitle"))
             font.pixelSize: Style.font.caption
             wrapMode: Text.Wrap
             color: root.preferenceError || root.service && (root.service.workspaceError || root.service.error) ? Color.urgent : root.insightColor
@@ -194,6 +198,7 @@ Item {
             id: scroll
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.preferredHeight: Math.min(contentHeight, Style.space(380))
             clip: true
             contentHeight: pageLoader.item ? pageLoader.item.implicitHeight : 0
             boundsBehavior: Flickable.StopAtBounds

@@ -25,7 +25,10 @@ Ui.Panel {
     readonly property var uiPrefs: hostWidget ? hostWidget.uiPrefs : Presentation.preferences({})
     readonly property color heroColor: Presentation.tint(uiPrefs.heroColor, Color.accent, Color.popups.text, Color.urgent)
     readonly property bool motionEnabled: uiPrefs.motion && Style.duration(200) > 0
-    onMotionEnabledChanged: if (!motionEnabled) workspaceSlide.complete()
+    onMotionEnabledChanged: if (!motionEnabled) {
+        workspaceSlide.complete();
+        headerTitle.characters = strings.t("title").length;
+    }
     Behavior on workspaceReveal {
         enabled: !root.resettingView
         NumberAnimation {
@@ -57,6 +60,8 @@ Ui.Panel {
     readonly property int pathIndex: Model.indexFor(paths, cursorPath, "path")
     readonly property var currentPath: pathIndex >= 0 ? paths[pathIndex] : null
     readonly property bool detail: selectedId !== ""
+    onWorkspaceOpenChanged: if (workspaceOpen) headerTitle.characters = strings.t("title").length
+    onDetailChanged: if (detail) headerTitle.characters = strings.t("title").length
     readonly property bool overviewBusy: busy && service.scanMode === "overview"
     readonly property bool overviewPartial: !!service && (service.partial || service.limited || overviewBusy)
     readonly property bool overviewMeasured: apps.some(function(app) {
@@ -87,7 +92,10 @@ Ui.Panel {
 
     Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
     onOpenedChanged: {
-        if (!opened) return;
+        if (!opened) {
+            headerTitle.characters = strings.t("title").length;
+            return;
+        }
         resettingView = true;
         workspaceOpen = false;
         selectedId = "";
@@ -96,6 +104,7 @@ Ui.Panel {
         cursorActionPath = "";
         expanded = false;
         closeSearch();
+        headerTitle.characters = motionEnabled ? 0 : strings.t("title").length;
         Qt.callLater(function() { root.resettingView = false; });
     }
 
@@ -242,7 +251,7 @@ Ui.Panel {
         focusTarget: content
         contentWidth: fittedContentWidth(Style.space(360))
         contentHeight: root.workspaceOpen || root.workspaceReveal > 0
-            ? fittedContentHeight(Style.space(480), Style.space(480))
+            ? fittedContentHeight(workspaceView.implicitHeight, Style.space(480))
             : fittedContentHeight(layout.implicitHeight, root.expanded && !root.detail ? 0 : Style.space(480))
 
         Item {
@@ -319,11 +328,23 @@ Ui.Panel {
                         onClicked: root.back()
                     }
                     MapText {
+                        id: headerTitle
+                        property int characters: strings.t("title").length
                         Layout.fillWidth: true
-                        text: root.detail && root.selectedApp ? root.selectedApp.name : strings.t("title")
+                        text: root.detail && root.selectedApp ? root.selectedApp.name
+                            : strings.t("title").slice(0, characters) + (titleTyping.running ? "│" : "")
+                        Accessible.name: root.detail && root.selectedApp ? root.selectedApp.name : strings.t("title")
                         font.pixelSize: Style.font.body
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
+                        Timer {
+                            id: titleTyping
+                            interval: Math.max(1, Style.duration(60))
+                            repeat: true
+                            running: root.opened && root.motionEnabled && !root.workspaceOpen
+                                && !root.detail && headerTitle.characters < strings.t("title").length
+                            onTriggered: headerTitle.characters++
+                        }
                     }
                     MapIconButton {
                         visible: !root.detail
@@ -424,6 +445,7 @@ Ui.Panel {
                 }
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: Style.space(8)
                     visible: root.uiPrefs.showChart && !root.detail && !root.searching
                     spacing: Style.space(18)
                     MapDonut {

@@ -14,6 +14,9 @@ ColumnLayout {
     property string coverage: "all"
     property string packageKind: "all"
     property bool missingCacheOpen: false
+    readonly property bool inventoryLoaded: !!installations && installations.scannedAt > 0
+    readonly property var notes: view ? view.warnings : []
+    readonly property bool cacheLoaded: !!view && (view.refreshedAt > 0 || view.insights.cache.length > 0 || view.history.some(function(snapshot) { return snapshot.mode === "overview"; }))
     readonly property var installations: view ? view.installations : null
     readonly property var ranked: !view ? [] : page === "cache" ? view.insights.cache.slice().sort(function(a, b) { return b.bytes - a.bytes; }) : page === "growing" ? view.insights.growing.filter(function(row) { return row.comparable && row.delta > 0; }).sort(function(a, b) { return b.delta - a.delta; }) : []
     readonly property real largest: ranked.reduce(function(value, row) { return Math.max(value, root.page === "cache" ? row.bytes : row.delta); }, 1)
@@ -36,6 +39,7 @@ ColumnLayout {
     readonly property var alerts: page === "alerts" && view ? view.alerts.slice().sort(function(a, b) { return b.at - a.at; }) : []
     function toggleInfo() { infoOpen = !infoOpen; }
     function helpKey() { return page === "cache" || page === "growing" ? "workspace.insightsHelp" : "workspace." + page + "Help"; }
+    function hasApp(id) { return !!workspace.service && workspace.service.apps.some(function(app) { return app.id === id; }); }
     spacing: Style.space(8)
 
     MapText {
@@ -52,11 +56,10 @@ ColumnLayout {
         spacing: Style.space(8)
         MapMetricCard {
             Layout.fillWidth: true
-            visible: !root.ranked.length
+            label: root.workspace.strings.t(root.page === "cache" ? "records.measuredCache" : "records.positiveComparisons")
             icon: root.page === "cache" ? "cache" : "growth"
-            label: root.workspace.strings.t(root.page === "cache" ? "workspace.cache" : "workspace.growing")
-            value: root.ranked.length ? root.page === "cache" ? root.workspace.size(root.ranked[0].bytes, root.ranked[0].partial) : root.workspace.strings.t("workspace.positive").arg(root.workspace.size(root.ranked[0].delta)) : root.workspace.strings.t("workspace.noDelta")
-            detail: root.ranked.length ? root.ranked[0].name : root.workspace.strings.t(root.page === "cache" ? "workspace.noCache" : "workspace.noComparableShort")
+            value: root.view && (root.page !== "cache" || root.cacheLoaded) ? root.workspace.number(root.ranked.length) : root.workspace.strings.t("size.unknown")
+            detail: !root.view ? root.workspace.strings.t("records.notLoaded") : root.page === "cache" && !root.cacheLoaded ? root.workspace.strings.t("records.noCacheLoaded") : !root.ranked.length ? root.workspace.strings.t(root.page === "cache" ? "workspace.noCache" : "workspace.noComparableShort") : ""
             tint: root.workspace.insightColor
         }
         Repeater {
@@ -67,23 +70,40 @@ ColumnLayout {
                 required property int index
                 property bool expanded: false
                 Layout.fillWidth: true
-                title: modelData.name
+                title: ""
                 RowLayout {
                     Layout.fillWidth: true
                     MapText { text: root.workspace.number(rankedRow.index + 1); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.5) }
-                    MapText {
+                    ColumnLayout {
                         Layout.fillWidth: true
+                        spacing: Style.space(2)
+                        MapText { Layout.fillWidth: true; text: rankedRow.modelData.name; font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                        MapText {
+                            Layout.fillWidth: true
+                            visible: root.page === "growing"
+                            text: root.workspace.strings.t(rankedRow.modelData.mode === "deep" ? "workspace.deep" : "overview")
+                            font.pixelSize: Style.font.caption
+                            color: Util.alpha(Color.popups.text, 0.65)
+                        }
+                    }
+                    MapText {
                         text: root.page === "cache" ? root.workspace.size(rankedRow.modelData.bytes, rankedRow.modelData.partial) : root.workspace.strings.t("workspace.positive").arg(root.workspace.size(rankedRow.modelData.delta))
-                        font.pixelSize: Style.font.heading
+                        font.pixelSize: Style.font.bodySmall
                         font.weight: Font.DemiBold
                         color: root.page === "cache" && rankedRow.modelData.partial ? Color.urgent : root.workspace.insightColor
-                        elide: Text.ElideRight
                     }
                     MapIconButton {
                         icon: "info"
                         label: root.workspace.strings.t(rankedRow.expanded ? "workspace.hideDetails" : "workspace.details")
                         selected: rankedRow.expanded
                         onClicked: rankedRow.expanded = !rankedRow.expanded
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                    }
+                    MapIconButton {
+                        icon: "next"
+                        label: root.workspace.strings.t("records.openApp").arg(rankedRow.modelData.name)
+                        enabled: root.hasApp(rankedRow.modelData.id)
+                        onClicked: root.workspace.appRequested(rankedRow.modelData.id)
                         onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
                     }
                 }
@@ -98,14 +118,8 @@ ColumnLayout {
                         radius: parent.radius
                         width: parent.width * Math.max(0, Math.min(1, (root.page === "cache" ? rankedRow.modelData.bytes : rankedRow.modelData.delta) / root.largest))
                         color: root.page === "cache" && rankedRow.modelData.partial ? Color.urgent : root.workspace.insightColor
+                        Behavior on width { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
                     }
-                }
-                MapText {
-                    Layout.fillWidth: true
-                    visible: root.page === "growing"
-                    text: root.workspace.strings.t(rankedRow.modelData.mode === "deep" ? "workspace.deep" : "overview")
-                    font.pixelSize: Style.font.caption
-                    color: Util.alpha(Color.popups.text, 0.65)
                 }
                 MapText {
                     Layout.fillWidth: true
@@ -114,16 +128,7 @@ ColumnLayout {
                     font.pixelSize: Style.font.caption
                     wrapMode: Text.Wrap
                 }
-                MapText { Layout.fillWidth: true; visible: rankedRow.expanded; text: rankedRow.modelData.id; font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.6); wrapMode: Text.WrapAnywhere }
-                Ui.Button {
-                    visible: rankedRow.expanded
-                    text: root.workspace.strings.t("visual.viewApp")
-                    focusable: true
-                    fontSize: Style.font.caption
-                    enabled: !!root.workspace.service && root.workspace.service.apps.some(function(app) { return app.id === rankedRow.modelData.id; })
-                    onClicked: root.workspace.appRequested(rankedRow.modelData.id)
-                    onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
-                }
+                MapText { Layout.fillWidth: true; visible: rankedRow.expanded; text: root.workspace.strings.t("workspace.appIdentity").arg(rankedRow.modelData.name).arg(rankedRow.modelData.id); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.6); wrapMode: Text.WrapAnywhere }
             }
         }
         Ui.Button {
@@ -165,18 +170,25 @@ ColumnLayout {
         MapMetricCard {
             Layout.fillWidth: true
             icon: "package"
-            label: root.workspace.strings.t("workspace.uniquePackages")
-            value: root.installations && root.installations.knownApps > 0 ? root.workspace.size(root.installations.totalBytes) : root.workspace.strings.t("size.unknown")
-            detail: root.installations && root.installations.scannedAt > 0 ? root.workspace.date(root.installations.scannedAt) : root.workspace.strings.t("workspace.notRefreshed")
+            label: root.workspace.strings.t("records.packageTotal")
+            value: root.inventoryLoaded && root.installations.knownApps > 0 ? root.workspace.size(root.installations.totalBytes) : root.workspace.strings.t("size.unknown")
+            detail: root.inventoryLoaded ? root.workspace.strings.t("records.packageTotalBasis") : root.workspace.strings.t("workspace.notRefreshed")
             tint: root.workspace.insightColor
-            ratio: root.installations && root.installations.knownApps + root.installations.unresolvedApps > 0 ? root.installations.knownApps / (root.installations.knownApps + root.installations.unresolvedApps) : -1
         }
         MapText {
             Layout.fillWidth: true
+            visible: root.inventoryLoaded
             text: root.workspace.strings.t("workspace.packageCoverage").arg(root.workspace.number(root.installations ? root.installations.knownApps : 0)).arg(root.workspace.number(root.installations ? root.installations.unresolvedApps : 0))
             font.pixelSize: Style.font.caption
             color: root.installations && root.installations.unresolvedApps > 0 ? Color.urgent : Util.alpha(Color.popups.text, 0.7)
             wrapMode: Text.Wrap
+        }
+        MapText {
+            Layout.fillWidth: true
+            visible: root.infoOpen && root.inventoryLoaded
+            text: root.inventoryLoaded ? root.workspace.date(root.installations.scannedAt) : ""
+            font.pixelSize: Style.font.caption
+            color: Util.alpha(Color.popups.text, 0.65)
         }
         RowLayout {
             Layout.fillWidth: true
@@ -188,6 +200,7 @@ ColumnLayout {
                     text: root.workspace.strings.t("visual.coverage." + modelData)
                     selected: root.coverage === modelData
                     focusable: true
+                    radius: Style.space(10)
                     fontSize: Style.font.caption
                     onClicked: root.coverage = modelData
                     onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
@@ -204,6 +217,7 @@ ColumnLayout {
                     text: root.workspace.strings.t("visual.package." + modelData)
                     selected: root.packageKind === modelData
                     focusable: true
+                    radius: Style.space(10)
                     fontSize: Style.font.caption
                     horizontalPadding: Style.space(5)
                     onClicked: root.packageKind = modelData
@@ -218,11 +232,12 @@ ColumnLayout {
                 required property var modelData
                 property bool expanded: false
                 Layout.fillWidth: true
-                title: modelData.name
+                title: ""
                 RowLayout {
                     Layout.fillWidth: true
                     MapGlyph { icon: "package"; color: root.workspace.insightColor }
-                    MapText { Layout.fillWidth: true; text: root.workspace.size(packageRow.modelData.bytes); font.pixelSize: Style.font.heading; font.weight: Font.DemiBold; color: packageRow.modelData.status === "known" ? root.workspace.insightColor : Color.urgent; elide: Text.ElideRight }
+                    MapText { Layout.fillWidth: true; text: packageRow.modelData.name; font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                    MapText { text: root.workspace.size(packageRow.modelData.bytes); font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; color: packageRow.modelData.status === "known" ? root.workspace.insightColor : Color.urgent }
                     MapIconButton {
                         icon: "info"
                         label: root.workspace.strings.t(packageRow.expanded ? "workspace.hideDetails" : "workspace.details")
@@ -246,15 +261,20 @@ ColumnLayout {
                     color: Util.alpha(Color.popups.text, 0.7)
                     wrapMode: Text.Wrap
                 }
+                MapText { Layout.fillWidth: true; visible: packageRow.expanded; text: packageRow.modelData.name; font.pixelSize: Style.font.caption; wrapMode: Text.WrapAnywhere }
                 MapText { Layout.fillWidth: true; visible: packageRow.expanded && packageRow.modelData.appIds.length > 1; text: root.workspace.strings.t("workspace.sharedPackage"); font.pixelSize: Style.font.caption; color: root.workspace.insightColor; wrapMode: Text.Wrap }
                 Repeater {
                     model: packageRow.expanded ? packageRow.modelData.appIds : []
-                    MapText {
+                    Ui.Button {
                         required property string modelData
                         Layout.fillWidth: true
                         text: root.workspace.strings.t("workspace.appIdentity").arg(root.workspace.appName(modelData)).arg(modelData)
-                        font.pixelSize: Style.font.caption
-                        wrapMode: Text.WrapAnywhere
+                        focusable: true
+                        leftAlign: true
+                        fontSize: Style.font.caption
+                        enabled: root.hasApp(modelData)
+                        onClicked: root.workspace.appRequested(modelData)
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
                     }
                 }
                 MapText { Layout.fillWidth: true; visible: packageRow.expanded && text !== ""; text: packageRow.modelData.reason; font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.7); wrapMode: Text.Wrap }
@@ -268,10 +288,12 @@ ColumnLayout {
                 required property var modelData
                 property bool expanded: false
                 Layout.fillWidth: true
-                title: root.workspace.appName(modelData.id)
+                title: ""
                 RowLayout {
                     Layout.fillWidth: true
-                    MapText { Layout.fillWidth: true; text: root.workspace.strings.t("size.unknown"); font.pixelSize: Style.font.caption; color: Color.urgent }
+                    MapGlyph { icon: "package"; color: Color.urgent }
+                    MapText { Layout.fillWidth: true; text: root.workspace.appName(unknownRow.modelData.id); font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                    MapText { text: root.workspace.strings.t("size.unknown"); font.pixelSize: Style.font.caption; color: Color.urgent }
                     MapIconButton {
                         icon: "info"
                         label: root.workspace.strings.t(unknownRow.expanded ? "workspace.hideDetails" : "workspace.details")
@@ -279,12 +301,19 @@ ColumnLayout {
                         onClicked: unknownRow.expanded = !unknownRow.expanded
                         onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
                     }
+                    MapIconButton {
+                        icon: "next"
+                        label: root.workspace.strings.t("records.openApp").arg(root.workspace.appName(unknownRow.modelData.id))
+                        enabled: root.hasApp(unknownRow.modelData.id)
+                        onClicked: root.workspace.appRequested(unknownRow.modelData.id)
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                    }
                 }
-                MapText { Layout.fillWidth: true; visible: unknownRow.expanded; text: unknownRow.modelData.id; font.pixelSize: Style.font.caption; wrapMode: Text.WrapAnywhere; color: Util.alpha(Color.popups.text, 0.65) }
+                MapText { Layout.fillWidth: true; visible: unknownRow.expanded; text: root.workspace.strings.t("workspace.appIdentity").arg(root.workspace.appName(unknownRow.modelData.id)).arg(unknownRow.modelData.id); font.pixelSize: Style.font.caption; wrapMode: Text.WrapAnywhere; color: Util.alpha(Color.popups.text, 0.65) }
                 MapText { Layout.fillWidth: true; visible: unknownRow.expanded; text: unknownRow.modelData.reason; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
             }
         }
-        MapText { Layout.fillWidth: true; visible: !root.packageGroups.length && !root.unknownApps.length; text: root.workspace.strings.t("visual.noPackages"); font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
+        MapText { Layout.fillWidth: true; visible: root.inventoryLoaded && !root.packageGroups.length && !root.unknownApps.length; text: !root.installations ? "" : root.workspace.strings.t(root.installations.groups.length || root.installations.apps.length ? "records.noFilterMatches" : root.installations.issues.length ? "records.packagesUnavailable" : "records.noPackages"); font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
         Repeater {
             model: root.page === "installations" && root.installations ? root.installations.issues : []
             MapText { required property string modelData; Layout.fillWidth: true; text: modelData; color: Color.urgent; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
@@ -294,10 +323,18 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.page === "leftovers"
         spacing: Style.space(8)
+        MapMetricCard {
+            Layout.fillWidth: true
+            icon: "leftovers"
+            label: root.workspace.strings.t("records.leftoverCandidates")
+            value: root.view && root.view.refreshedAt > 0 ? root.workspace.number(root.view.leftovers.length) : root.workspace.strings.t("size.unknown")
+            detail: root.workspace.strings.t("records.leftoverCaution")
+            tint: Color.urgent
+        }
         MapText {
             Layout.fillWidth: true
             visible: !root.view || !root.view.leftovers.length
-            text: root.workspace.strings.t(root.view && root.view.refreshedAt > 0 ? "workspace.noLeftovers" : "workspace.notRefreshed")
+            text: root.workspace.strings.t(!root.view || root.view.refreshedAt === 0 ? "workspace.notRefreshed" : root.notes.length ? "records.leftoversUnavailable" : "workspace.noLeftovers")
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.Wrap
         }
@@ -308,10 +345,15 @@ ColumnLayout {
                 required property var modelData
                 property bool expanded: false
                 Layout.fillWidth: true
-                title: modelData.name
+                title: ""
                 RowLayout {
                     Layout.fillWidth: true
-                    MapText { Layout.fillWidth: true; text: root.workspace.size(leftoverRow.modelData.bytes, leftoverRow.modelData.status !== "complete"); color: root.workspace.insightColor; font.pixelSize: Style.font.heading; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: Style.space(2)
+                        MapText { Layout.fillWidth: true; text: leftoverRow.modelData.name; font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                        MapText { Layout.fillWidth: true; text: root.workspace.size(leftoverRow.modelData.bytes, leftoverRow.modelData.status !== "complete"); color: leftoverRow.modelData.status === "complete" ? root.workspace.insightColor : Color.urgent; font.pixelSize: Style.font.bodySmall; elide: Text.ElideRight }
+                    }
                     MapIconButton {
                         icon: "folder"
                         label: root.workspace.strings.t("openFolder")
@@ -334,7 +376,6 @@ ColumnLayout {
                         onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
                     }
                 }
-                MapText { Layout.fillWidth: true; text: root.workspace.strings.t("workspace.possibleLeftover"); color: Color.urgent; font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
                 MapText { Layout.fillWidth: true; text: leftoverRow.modelData.path; font.pixelSize: Style.font.caption; elide: Text.ElideMiddle; visible: !leftoverRow.expanded; color: Util.alpha(Color.popups.text, 0.65) }
                 MapText { Layout.fillWidth: true; visible: leftoverRow.expanded; text: leftoverRow.modelData.path; font.pixelSize: Style.font.caption; wrapMode: Text.WrapAnywhere }
                 MapText {
@@ -368,15 +409,19 @@ ColumnLayout {
         MapMetricCard {
             Layout.fillWidth: true
             icon: "alert"
-            label: root.workspace.strings.t("workspace.threshold")
-            value: root.workspace.settings ? root.workspace.size(root.workspace.settings.thresholdBytes) : root.workspace.strings.t("size.unknown")
-            detail: root.workspace.strings.t(root.workspace.settings && root.workspace.settings.alertsEnabled ? "visual.alertsOn" : "visual.alertsOff")
+            label: root.workspace.strings.t("records.savedAlerts")
+            value: root.view ? root.workspace.number(root.alerts.length) : root.workspace.strings.t("size.unknown")
+            detail: !root.workspace.settings ? root.workspace.strings.t("records.notLoaded") : root.workspace.strings.t(root.workspace.settings.alertsEnabled ? "records.notificationsOn" : "records.notificationsOff")
             tint: root.workspace.insightColor
-            actionable: true
-            onClicked: root.workspace.navigate("settings")
-            onFocused: function(item) { root.workspace.reveal(item); }
         }
-        MapText { Layout.fillWidth: true; visible: !root.alerts.length; text: root.workspace.strings.t("workspace.noAlerts"); font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap }
+        MapText {
+            Layout.fillWidth: true
+            visible: root.infoOpen
+            text: root.workspace.strings.t("records.currentThreshold").arg(root.workspace.settings ? root.workspace.size(root.workspace.settings.thresholdBytes) : root.workspace.strings.t("size.unknown"))
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.Wrap
+        }
+        MapText { Layout.fillWidth: true; visible: !!root.view && !root.alerts.length; text: root.workspace.strings.t("workspace.noAlerts"); font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap }
         Repeater {
             model: root.alerts
             RowLayout {
@@ -393,10 +438,11 @@ ColumnLayout {
                 }
                 MapSection {
                     Layout.fillWidth: true
-                    title: alertRow.modelData.name
+                    title: ""
                     RowLayout {
                         Layout.fillWidth: true
-                        MapText { Layout.fillWidth: true; text: root.workspace.strings.t("workspace.positive").arg(root.workspace.size(alertRow.modelData.delta)); color: root.workspace.insightColor; font.pixelSize: Style.font.heading; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                        MapText { Layout.fillWidth: true; text: alertRow.modelData.name; font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                        MapText { text: root.workspace.strings.t("workspace.positive").arg(root.workspace.size(alertRow.modelData.delta)); color: root.workspace.insightColor; font.pixelSize: Style.font.bodySmall; font.weight: Font.DemiBold }
                         MapIconButton {
                             icon: "info"
                             label: root.workspace.strings.t(alertRow.expanded ? "workspace.hideDetails" : "workspace.details")
@@ -404,23 +450,70 @@ ColumnLayout {
                             onClicked: alertRow.expanded = !alertRow.expanded
                             onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
                         }
+                        MapIconButton {
+                            icon: "next"
+                            label: root.workspace.strings.t("records.openApp").arg(alertRow.modelData.name)
+                            enabled: root.hasApp(alertRow.modelData.id)
+                            onClicked: root.workspace.appRequested(alertRow.modelData.id)
+                            onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                        }
                     }
                     MapText { Layout.fillWidth: true; text: root.workspace.date(alertRow.modelData.at); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.7); wrapMode: Text.Wrap }
                     MapText { Layout.fillWidth: true; visible: alertRow.expanded; text: root.workspace.strings.t("workspace.triggerThreshold").arg(root.workspace.size(alertRow.modelData.thresholdBytes)); font.pixelSize: Style.font.caption; wrapMode: Text.Wrap }
-                    MapText { Layout.fillWidth: true; visible: alertRow.expanded; text: alertRow.modelData.id; font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.65); wrapMode: Text.WrapAnywhere }
+                    MapText { Layout.fillWidth: true; visible: alertRow.expanded; text: root.workspace.strings.t("workspace.appIdentity").arg(alertRow.modelData.name).arg(alertRow.modelData.id); font.pixelSize: Style.font.caption; color: Util.alpha(Color.popups.text, 0.65); wrapMode: Text.WrapAnywhere }
                 }
             }
         }
-        Ui.Button { Layout.fillWidth: true; text: root.workspace.strings.t("workspace.alertSettings"); focusable: true; fontSize: Style.font.caption; onClicked: root.workspace.navigate("settings"); onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this) }
     }
-    Repeater {
-        model: root.page === "notes" && root.view ? root.view.warnings : []
-        MapSection {
-            id: noteRow
-            required property string modelData
+    ColumnLayout {
+        Layout.fillWidth: true
+        visible: root.page === "notes"
+        spacing: Style.space(8)
+        MapMetricCard {
             Layout.fillWidth: true
-            title: root.workspace.strings.t("workspace.notes")
-            MapText { Layout.fillWidth: true; text: noteRow.modelData; color: Color.urgent; font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap }
+            icon: "info"
+            label: root.workspace.strings.t("records.scanNotes")
+            value: root.view && root.view.refreshedAt > 0 ? root.workspace.number(root.notes.length) : root.workspace.strings.t("size.unknown")
+            detail: root.view && root.view.refreshedAt > 0 ? root.workspace.date(root.view.refreshedAt) : root.workspace.strings.t("workspace.notRefreshed")
+            tint: root.notes.length ? Color.urgent : root.workspace.insightColor
+        }
+        MapText {
+            Layout.fillWidth: true
+            visible: !!root.view && root.view.refreshedAt > 0 && !root.notes.length
+            text: root.workspace.strings.t("records.noNotes")
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.Wrap
+        }
+        Repeater {
+            model: root.page === "notes" ? root.notes : []
+            MapSection {
+                id: noteRow
+                required property string modelData
+                property bool expanded: false
+                Layout.fillWidth: true
+                RowLayout {
+                    Layout.fillWidth: true
+                    MapGlyph { icon: "info"; color: Color.urgent }
+                    MapText {
+                        id: noteText
+                        Layout.fillWidth: true
+                        text: noteRow.modelData
+                        color: Color.urgent
+                        font.pixelSize: Style.font.bodySmall
+                        wrapMode: Text.Wrap
+                        maximumLineCount: noteRow.expanded ? 2147483647 : 2
+                        elide: Text.ElideRight
+                    }
+                    MapIconButton {
+                        visible: noteRow.expanded || noteText.truncated
+                        icon: "info"
+                        label: root.workspace.strings.t(noteRow.expanded ? "workspace.hideDetails" : "workspace.details")
+                        selected: noteRow.expanded
+                        onClicked: noteRow.expanded = !noteRow.expanded
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                    }
+                }
+            }
         }
     }
 }
