@@ -85,6 +85,8 @@ The root [`preview.png`](preview.png) is the cinematic hero; [`preview-pages.png
 
 The compositions mix straight-on cards with inward/outward Y-axis rotations only. Native captures use Tokyo Night, Catppuccin Latte, Everforest and Rosé Pine's light palette, with Mosaic's accent preferences. Apply palettes only in a temporary capture session; preserve the user's saved theme, settings and history rather than recolouring screenshot pixels.
 
+Name the Installations capture `package-sizes.png`: the marketplace baseline treats binary filenames containing `install` as unscannable installer candidates. This screenshot naming convention does not change or exclude runtime installation-analysis or updater code.
+
 From the repository root, render with librsvg and Chromium in a private browser profile:
 
 ```sh
