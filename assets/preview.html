@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mosaic — Storage, in perspective.</title>
+  <style>
+    /* Export with Chromium at 3600 × 2200, device scale 1. */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 3600px; height: 2200px; overflow: hidden; }
+    body { font-family: "Adwaita Sans", sans-serif; color: #f0f6f6; background: #111e31; font-synthesis: none; }
+    main { position: relative; width: 100%; height: 100%; isolation: isolate; }
+    .landscape { position: absolute; inset: 0; z-index: -3; background: url("showcase-wallpaper.png") center 56% / cover no-repeat; }
+    .shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, #0c172b99, transparent 42%), linear-gradient(0deg, #0d1b29aa, transparent 25%); }
+    .atmosphere { position: absolute; left: 1010px; top: 180px; width: 2100px; height: 1580px; z-index: -1; background: radial-gradient(ellipse, #acc5dc12, transparent 67%); }
+    .brand { position: absolute; top: 235px; left: 155px; display: flex; gap: 30px; align-items: center; }
+    .brand img { width: 170px; height: 170px; filter: drop-shadow(0 6px 35px #94b9f51a); }
+    .brand-name { font-size: 150px; line-height: 1; letter-spacing: -8px; font-weight: 650; }
+    .edition { position: absolute; top: 150px; left: 185px; font: 23px "Adwaita Mono", monospace; letter-spacing: 5px; color: #bdd3dd; }
+    h1 { position: absolute; left: 185px; top: 515px; margin: 0; font-size: 94px; line-height: 1.12; font-weight: 450; letter-spacing: -4px; }
+    h1 span { color: #b4e4d3; }
+    .intro { position: absolute; left: 190px; top: 800px; font-size: 32px; line-height: 1.6; color: #cfdee2; margin: 0; }
+    .features { position: absolute; left: 190px; top: 1030px; display: grid; gap: 65px; }
+    .feature { display: flex; align-items: center; gap: 32px; }
+    .feature-icon { display: grid; place-items: center; width: 75px; height: 75px; border: 1px solid #c2e5db3b; border-radius: 23px; color: #b2e3d2; background: #0d222641; box-shadow: inset 0 1px 0 #dcebf111; }
+    .feature-icon svg { width: 37px; height: 37px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .feature strong { display: block; font-size: 31px; font-weight: 600; letter-spacing: -.5px; }
+    .feature p { margin: 12px 0 0; font-size: 23px; color: #b8cdd4; letter-spacing: .2px; }
+    .native { position: absolute; margin: 0; perspective: 2600px; }
+    .native img { display: block; width: 100%; height: auto; transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)); border-radius: 15px; box-shadow: 0 5px 0 #0a142be6, 0 12px 15px #050e1d4d, 0 48px 75px -5px #040b1e80, 0 95px 120px -30px #030b1eb3; }
+    .overview { left: 1110px; top: 380px; width: 800px; --rx: 8deg; --ry: -17deg; --rz: -8deg; z-index: 4; }
+    .dashboard { left: 2025px; top: 180px; width: 600px; --rx: 9deg; --ry: -19deg; --rz: 8deg; z-index: 2; }
+    .settings { left: 2790px; top: 155px; width: 510px; --rx: 8deg; --ry: -23deg; --rz: 12deg; z-index: 1; }
+    .category { left: 1970px; top: 1170px; width: 620px; --rx: 7deg; --ry: -13deg; --rz: -7deg; z-index: 5; }
+    .year { left: 2740px; top: 1020px; width: 620px; --rx: 9deg; --ry: -19deg; --rz: 9deg; z-index: 3; }
+    .caption { position: absolute; left: 195px; bottom: 365px; font-size: 28px; font-weight: 450; letter-spacing: -.3px; color: #d8e8e7; }
+    .caption b { color: #aee0d1; font-weight: 600; }
+    footer { position: absolute; left: 190px; right: 180px; bottom: 90px; display: flex; align-items: center; justify-content: space-between; color: #b4cfd3; font-size: 23px; letter-spacing: .7px; }
+    .footer-brand { font: 21px "Adwaita Mono", monospace; color: #c4ded9; letter-spacing: 1.3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="landscape"></div><div class="shade"></div><div class="atmosphere"></div>
+    <div class="edition">OMARCHY SHELL / v0.1.0</div>
+    <div class="brand"><img src="mosaic.svg" alt="Mosaic Reveal logo"><div class="brand-name">Mosaic</div></div>
+    <h1>Storage,<br><span>in perspective.</span></h1>
+    <p class="intro">Know where your apps keep data.<br>A compact explorer for Omarchy.</p>
+    <div class="features">
+      <div class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div><strong>Every category, at a glance.</strong><p>Config · Data · Cache · State</p></div></div>
+      <div class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 15v-4m7 4V5m7 10V2"/><path d="m4 8 6-5 4 2 6-4"/></svg></div><div><strong>See what changed.</strong><p>History · Growth · Yearly insights</p></div></div>
+      <div class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="m12 2 8 3v6c0 5-5 9-8 11-3-2-8-6-8-11V5Z"/><path d="m8 11 3 3 5-6"/></svg></div><div><strong>Your files stay yours.</strong><p>Local scans · Read-only app files</p></div></div>
+    </div>
+    <figure class="native overview"><img src="previews/overview.png" alt="Mosaic overview with sample application storage"></figure>
+    <figure class="native dashboard"><img src="previews/dashboard.png" alt="Mosaic storage dashboard with sample comparisons"></figure>
+    <figure class="native settings"><img src="previews/settings-contribution.png" alt="Mosaic contribution and About sections"></figure>
+    <figure class="native category"><img src="previews/category-cache.png" alt="Interactive cache category shown with sample data"></figure>
+    <figure class="native year"><img src="previews/year.png" alt="Mosaic year in storage using illustrative monthly snapshots"></figure>
+    <div class="caption">A small panel.<br><b>A clearer picture.</b></div>
+    <footer><span class="footer-brand">github.com/naolselemon/mosaic</span><span>Actual native UI · Illustrative sample data</span></footer>
+  </main>
+</body>
+</html>

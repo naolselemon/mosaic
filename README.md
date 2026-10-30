@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/preview.png" alt="Mosaic's overview, cache explorer and storage dashboard, captured from the actual UI with illustrative sample data." width="100%">
+  <img src="preview.png" alt="Mosaic's native overview, dashboard, category explorer, yearly insights and Settings over an original twilight landscape. Illustrative sample data." width="100%">
 </p>
 
-# Mosaic
+<h1><img src="assets/mosaic.svg" alt="Mosaic Reveal logo" width="44" height="44"> Mosaic</h1>
 
 A compact, read-only **application-storage explorer for Omarchy**.
 
@@ -11,6 +11,12 @@ A compact, read-only **application-storage explorer for Omarchy**.
 - **Stay in control**: app files stay untouched, history is opt-in, and updates require restart approval.
 
 An app-storage map—not a full-disk report or a cleanup tool.
+
+<details>
+<summary><b>Explore every page</b></summary>
+<br>
+<a href="preview-pages.png"><img src="preview-pages.png" alt="All Mosaic pages, four category tabs and every Settings section, captured from the native UI with illustrative sample data." width="100%"></a>
+</details>
 
 <a id="installation-and-development"></a>
 

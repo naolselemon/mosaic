@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mosaic — Every view. One clear picture.</title>
+  <style>
+    /* Export at a 3200px viewport width and the document's natural height.
+       All 26 native captures retain their complete, intrinsic aspect ratio. */
+    :root {
+      color-scheme: dark;
+      font-family: "Adwaita Sans", sans-serif;
+      color: #edf8f6;
+      background: #101e30;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 3200px; }
+    .showcase {
+      position: relative;
+      isolation: isolate;
+      width: 3200px;
+      margin: 0 auto;
+      padding: 108px 118px 88px;
+      background: #101e30;
+    }
+    .showcase::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background: url("showcase-wallpaper.png") center center / cover no-repeat;
+    }
+    .showcase::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, rgb(7 19 35 / 13%), rgb(7 19 35 / 5%) 36%, rgb(7 19 35 / 36%));
+    }
+    .masthead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 80px;
+      margin: 0 28px 82px;
+    }
+    .brand { display: flex; align-items: center; gap: 28px; }
+    .brand img { width: 106px; height: 106px; }
+    .brand-name { font-size: 53px; font-weight: 650; letter-spacing: -2px; }
+    .eyebrow {
+      margin-top: 8px;
+      color: #b5d7d7;
+      font-size: 17px;
+      font-weight: 550;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .headline { text-align: right; }
+    h1 { margin: 0; font-size: 58px; font-weight: 500; letter-spacing: -2.6px; }
+    .subtitle { margin: 20px 0 0; color: #c2dbdf; font-size: 20px; letter-spacing: 1px; }
+    .chapter { margin: 0 0 64px; }
+    .chapter:last-of-type { margin-bottom: 46px; }
+    .chapter-heading {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: 0 28px 24px;
+    }
+    .chapter-number {
+      color: #a5e1d1;
+      font: 17px "Adwaita Mono", monospace;
+      letter-spacing: 2px;
+    }
+    h2 { margin: 0; font-size: 25px; font-weight: 550; letter-spacing: 0.3px; }
+    .chapter-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      margin-left: 12px;
+      background: linear-gradient(90deg, rgb(187 230 224 / 28%), rgb(187 230 224 / 3%));
+    }
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      column-gap: 76px;
+      row-gap: 66px;
+      padding: 26px 34px 10px;
+    }
+    figure {
+      --rx: 5deg;
+      --ry: -9deg;
+      --rz: -2deg;
+      --lift: 0px;
+      flex: 0 0 480px;
+      width: 480px;
+      margin: 0;
+      perspective: 1800px;
+    }
+    figure:nth-child(2n) { --rx: 3deg; --ry: 9deg; --rz: 2deg; --lift: 10px; }
+    figure:nth-child(3n) { --rx: 6deg; --ry: -5deg; --rz: -1deg; --lift: -5px; }
+    figure:nth-child(4n) { --rx: 4deg; --ry: 11deg; --rz: 2.5deg; --lift: 4px; }
+    .native-card {
+      position: relative;
+      transform: translateY(var(--lift)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz));
+      transform-origin: center center;
+      border: 1px solid rgb(209 236 244 / 36%);
+      border-radius: 22px;
+      background: #14191f;
+      box-shadow: 0 5px 9px rgb(2 8 18 / 24%), 0 24px 35px -10px rgb(2 8 18 / 45%), 0 58px 70px -25px rgb(2 8 18 / 48%);
+    }
+    .native-card img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 21px;
+    }
+    figcaption {
+      position: relative;
+      margin-top: 35px;
+      padding: 0 8px;
+      color: #ecf5f3;
+      font-size: 21px;
+      font-weight: 550;
+      letter-spacing: 0.4px;
+      text-align: center;
+      text-shadow: 0 2px 12px rgb(4 14 27 / 90%);
+    }
+    .overview .cards { column-gap: 158px; }
+    .overview figure { flex-basis: 520px; width: 520px; }
+    .overview figure:nth-child(1) { --ry: 12deg; --rz: -3deg; }
+    .overview figure:nth-child(2) { --rx: 3deg; --ry: 0deg; --rz: 0deg; --lift: -8px; }
+    .overview figure:nth-child(3) { --ry: -12deg; --rz: 3deg; }
+    .categories .cards, .settings .cards { column-gap: 110px; }
+    .settings .cards { max-width: 2500px; margin: 0 auto; row-gap: 82px; }
+    .insights .cards { column-gap: 38px; }
+    .insights figure { flex-basis: 446px; width: 446px; }
+    .insights figure:nth-child(5) { --ry: -10deg; --rz: -2.5deg; }
+    .insights figure:nth-child(6) { --ry: 8deg; --rz: 1deg; }
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 28px;
+      padding-top: 30px;
+      border-top: 1px solid rgb(193 227 231 / 20%);
+      color: #bed3da;
+      font-size: 19px;
+      letter-spacing: 0.4px;
+    }
+    .edition { color: #a8dfd0; font: 17px "Adwaita Mono", monospace; letter-spacing: 2px; }
+  </style>
+</head>
+<body>
+  <main class="showcase">
+    <header class="masthead">
+      <div class="brand">
+        <img src="mosaic.svg" alt="Mosaic logo" width="106" height="106">
+        <div><div class="brand-name">Mosaic</div><div class="eyebrow">The complete gallery</div></div>
+      </div>
+      <div class="headline">
+        <h1>Every view. One clear picture.</h1>
+        <p class="subtitle">26 native views · Sample data throughout</p>
+      </div>
+    </header>
+
+    <section class="chapter overview" aria-labelledby="overview-heading">
+      <div class="chapter-heading"><span class="chapter-number">01</span><h2 id="overview-heading">Overview</h2></div>
+      <div class="cards">
+        <figure><div class="native-card"><img src="previews/overview.png" alt="Mosaic overview with sample data"></div><figcaption>Overview</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/application.png" alt="Mosaic application view with sample data"></div><figcaption>Application</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/dashboard.png" alt="Mosaic dashboard with sample data"></div><figcaption>Dashboard</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="chapter categories" aria-labelledby="categories-heading">
+      <div class="chapter-heading"><span class="chapter-number">02</span><h2 id="categories-heading">Categories</h2></div>
+      <div class="cards">
+        <figure><div class="native-card"><img src="previews/category-config.png" alt="Mosaic configuration category with sample data"></div><figcaption>Config</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/category-data.png" alt="Mosaic data category with sample data"></div><figcaption>Data</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/category-cache.png" alt="Mosaic cache category with sample data"></div><figcaption>Cache</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/category-state.png" alt="Mosaic state category with sample data"></div><figcaption>State</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="chapter insights" aria-labelledby="insights-heading">
+      <div class="chapter-heading"><span class="chapter-number">03</span><h2 id="insights-heading">Insights</h2></div>
+      <div class="cards">
+        <figure><div class="native-card"><img src="previews/history.png" alt="Mosaic history with sample data"></div><figcaption>History</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/year.png" alt="Mosaic year view with sample data"></div><figcaption>Year</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/cache.png" alt="Mosaic cache insights with sample data"></div><figcaption>Cache</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/growing.png" alt="Mosaic growing view with sample data"></div><figcaption>Growing</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/installations.png" alt="Mosaic installations with sample data"></div><figcaption>Installations</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/leftovers.png" alt="Mosaic leftovers with sample data"></div><figcaption>Leftovers</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="chapter controls" aria-labelledby="controls-heading">
+      <div class="chapter-heading"><span class="chapter-number">04</span><h2 id="controls-heading">Controls &amp; detail</h2></div>
+      <div class="cards">
+        <figure><div class="native-card"><img src="previews/mappings.png" alt="Mosaic mappings with sample data"></div><figcaption>Mappings</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/alerts.png" alt="Mosaic alerts with sample data"></div><figcaption>Alerts</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/notes.png" alt="Mosaic notes with sample data"></div><figcaption>Notes</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/diagnostics.png" alt="Mosaic diagnostics with sample data"></div><figcaption>Diagnostics</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/shortcuts.png" alt="Mosaic shortcuts"></div><figcaption>Shortcuts</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="chapter settings" aria-labelledby="settings-heading">
+      <div class="chapter-heading"><span class="chapter-number">05</span><h2 id="settings-heading">Settings</h2></div>
+      <div class="cards">
+        <figure><div class="native-card"><img src="previews/settings-display.png" alt="Mosaic display settings"></div><figcaption>Display</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-colors.png" alt="Mosaic color settings"></div><figcaption>Colors</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-history.png" alt="Mosaic history settings"></div><figcaption>History</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-alerts.png" alt="Mosaic growth notification settings"></div><figcaption>Growth notifications</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-data.png" alt="Mosaic local data settings"></div><figcaption>Local data</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-updates.png" alt="Mosaic update settings"></div><figcaption>Updates</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-about.png" alt="Mosaic about settings"></div><figcaption>About</figcaption></figure>
+        <figure><div class="native-card"><img src="previews/settings-contribution.png" alt="Mosaic contribution settings"></div><figcaption>Contribute</figcaption></figure>
+      </div>
+    </section>
+
+    <footer>
+      <span>Actual native interface captures. All application and usage data shown is synthetic.</span>
+      <span class="edition">MOSAIC / ALL 26 VIEWS</span>
+    </footer>
+  </main>
+</body>
+</html>
