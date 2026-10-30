@@ -83,6 +83,8 @@ For screenshots or recordings, use synthetic/demo data and crop to the plugin. E
 
 The root [`preview.png`](preview.png) is the cinematic hero; [`preview-pages.png`](preview-pages.png) covers every page, category tab and Settings section. Editable compositions live in [`assets/preview.html`](assets/preview.html) and [`assets/preview-pages.html`](assets/preview-pages.html). Both use actual native captures with synthetic data from `assets/previews/`, plus the original [`landscape artwork`](assets/showcase-wallpaper.svg). No external requests or scripts.
 
+The compositions mix straight-on cards with inward/outward Y-axis rotations only. Native captures use Tokyo Night, Catppuccin Latte, Everforest and Rosé Pine's light palette, with Mosaic's accent preferences. Apply palettes only in a temporary capture session; preserve the user's saved theme, settings and history rather than recolouring screenshot pixels.
+
 From the repository root, render with librsvg and Chromium in a private browser profile:
 
 ```sh
@@ -94,7 +96,7 @@ chromium --headless --disable-gpu --hide-scrollbars --no-first-run \
   --window-size=3600,2200 --screenshot=preview.png "file://$PWD/assets/preview.html"
 chromium --headless --disable-gpu --hide-scrollbars --no-first-run \
   --force-device-scale-factor=1 --user-data-dir="$profile" \
-  --window-size=3200,5460 --screenshot=preview-pages.png "file://$PWD/assets/preview-pages.html"
+  --window-size=3200,5562 --screenshot=preview-pages.png "file://$PWD/assets/preview-pages.html"
 ```
 
 The gallery height follows its content; remeasure it if captures or layout change. Inspect both PNGs at full size and at README width. Keep the sample-data labels visible and capture new UI rather than drawing controls or results that the plugin does not provide. The original landscape follows the project's MIT license; application names and icons in captures belong to their respective owners.

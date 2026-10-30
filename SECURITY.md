@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes target the latest stable release, currently **v0.1.0**. Older releases and development snapshots are not maintained as separate security branches. The earlier `2.x` versions were internal development iterations, not published releases.
+Security fixes target the latest stable release, currently **v0.1.1**. Older releases and development snapshots are not maintained as separate security branches. The earlier `2.x` versions were internal development iterations, not published releases.
 
 ## Report a vulnerability privately
 

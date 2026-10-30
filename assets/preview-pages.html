@@ -90,21 +90,19 @@
       padding: 26px 34px 10px;
     }
     figure {
-      --rx: 5deg;
-      --ry: -9deg;
-      --rz: -2deg;
+      --yaw: 24deg;
       --lift: 0px;
       flex: 0 0 480px;
       width: 480px;
       margin: 0;
-      perspective: 1800px;
+      perspective: 1200px;
     }
-    figure:nth-child(2n) { --rx: 3deg; --ry: 9deg; --rz: 2deg; --lift: 10px; }
-    figure:nth-child(3n) { --rx: 6deg; --ry: -5deg; --rz: -1deg; --lift: -5px; }
-    figure:nth-child(4n) { --rx: 4deg; --ry: 11deg; --rz: 2.5deg; --lift: 4px; }
+    figure:nth-child(2n) { --yaw: -24deg; --lift: 10px; }
+    figure:nth-child(3n) { --yaw: 0deg; --lift: -5px; }
+    figure:nth-child(4n) { --yaw: 30deg; --lift: 4px; }
     .native-card {
       position: relative;
-      transform: translateY(var(--lift)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz));
+      transform: translateY(var(--lift)) rotateY(var(--yaw));
       transform-origin: center center;
       border: 1px solid rgb(209 236 244 / 36%);
       border-radius: 22px;
@@ -120,7 +118,7 @@
     }
     figcaption {
       position: relative;
-      margin-top: 35px;
+      margin-top: 52px;
       padding: 0 8px;
       color: #ecf5f3;
       font-size: 21px;
@@ -131,15 +129,15 @@
     }
     .overview .cards { column-gap: 158px; }
     .overview figure { flex-basis: 520px; width: 520px; }
-    .overview figure:nth-child(1) { --ry: 12deg; --rz: -3deg; }
-    .overview figure:nth-child(2) { --rx: 3deg; --ry: 0deg; --rz: 0deg; --lift: -8px; }
-    .overview figure:nth-child(3) { --ry: -12deg; --rz: 3deg; }
+    .overview figure:nth-child(1) { --yaw: 0deg; }
+    .overview figure:nth-child(2) { --yaw: 24deg; --lift: -8px; }
+    .overview figure:nth-child(3) { --yaw: -24deg; }
     .categories .cards, .settings .cards { column-gap: 110px; }
     .settings .cards { max-width: 2500px; margin: 0 auto; row-gap: 82px; }
     .insights .cards { column-gap: 38px; }
     .insights figure { flex-basis: 446px; width: 446px; }
-    .insights figure:nth-child(5) { --ry: -10deg; --rz: -2.5deg; }
-    .insights figure:nth-child(6) { --ry: 8deg; --rz: 1deg; }
+    .insights figure:nth-child(5) { --yaw: -30deg; }
+    .insights figure:nth-child(6) { --yaw: 0deg; }
     footer {
       display: flex;
       align-items: center;
@@ -163,7 +161,7 @@
       </div>
       <div class="headline">
         <h1>Every view. One clear picture.</h1>
-        <p class="subtitle">26 native views · Sample data throughout</p>
+        <p class="subtitle">26 native views · Light &amp; dark palettes · Sample data throughout</p>
       </div>
     </header>
 

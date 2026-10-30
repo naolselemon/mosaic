@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "naolselemon.mosaic",
   "name": "Mosaic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Naol Selemon",
   "license": "MIT",
   "description": "Explore the settings, cache, data and state associated with your apps. Read-only, evidence-labeled, with local storage analysis.",

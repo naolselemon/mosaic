@@ -151,8 +151,8 @@ python3 -B backend/updates.py check
 Use a separate checkout of the published source, stop active Mosaic scans and close the popup, then mirror it into the installed plugin. Do not run the mirror from inside its destination:
 
 ```sh
-git clone --branch v0.1.0 https://github.com/naolselemon/mosaic.git mosaic-v0.1.0
-cd mosaic-v0.1.0
+git clone --branch v0.1.1 https://github.com/naolselemon/mosaic.git mosaic-v0.1.1
+cd mosaic-v0.1.1
 plugin="$HOME/.config/omarchy/plugins/naolselemon.mosaic"
 mkdir -p "$plugin"
 rsync -a --delete --exclude='.git/' --exclude='__pycache__/' ./ "$plugin/"
