@@ -6,6 +6,30 @@ A read-only Omarchy shell plugin that shows where desktop applications keep thei
 
 The **Reveal** mark frames a visible centre with four geometric pieces: a visual identity for making application storage visible. The live shell icon follows the current theme; the overview and About mark use the selected chart accent. Page-specific navigation icons remain distinct.
 
+### 2.8.2
+
+The circular refresh icon inside **Check now** rotates while an update check runs, then stops in its resting position. It pauses when the popup is closed or animations are disabled; the rounded button and default-page reopening behavior are unchanged.
+
+### 2.8.1
+
+The update-check action is a rounded pill with a circular leading refresh icon. Each fresh popup opening starts on the compact default overview, clearing the previous page, app selection, search filter and expanded state without changing saved preferences or scan results. Rapid reopening during a page transition also returns directly to the overview.
+
+### 2.8.0
+
+Stable releases can now be prepared and validated without changing the running plugin, then installed only after approval of an exact commit and whole-shell restart. An independent worker preserves activation and backs up Mosaic data, verifies the new runtime, and uses guarded recovery on failure. History, growth, data management and update preferences now use Contribution-style leading icons with aligned descriptions.
+
+### 2.7.1
+
+Hover the default-page or About logo to replay its animation once. Pointer movement within the logo and quick re-entry do not interrupt an active sequence; clicks and reduced-motion preferences keep their existing behavior.
+
+### 2.7.0
+
+Only the Mosaic logo animates: four shutters separate, unfold in staggered 3D, and assemble around the turning center over 760 ms. About replays on each scroll re-entry; the default-page logo uses the same sequence on opening or returning. Settings now includes explicit GitHub version checks and an optional, default-off daily check.
+
+### 2.6.0
+
+Reference-style Contribution rows and a centered About card now complete Settings. About opens with a short, layered book-page entrance when scrolled into view.
+
 ### 2.5.1
 
 The repository now separates QML entry points, reusable components, pages, JavaScript models, Python backend modules, and language-specific test suites. Imports, resource paths, development deployment, and test commands follow that layout. Plugin identity, stored-data locations, and behavior are unchanged.
@@ -16,7 +40,7 @@ App Data Map is now **Mosaic**, with the plugin ID `naolselemon.mosaic`, the Rev
 
 ## Use
 
-Click the Mosaic Reveal icon in the bar to open the panel. The first open starts a scan; **Rescan** refreshes it. Detailed results stay in the running shell's memory. Optional history saves compact summaries locally; it is off by default. There is no periodic background scan, network access or telemetry.
+Click the Mosaic Reveal icon in the bar to open the panel. The first open starts a scan; **Rescan** refreshes it. Detailed results stay in the running shell's memory. Optional history saves compact summaries locally; it is off by default. There is no periodic background scan or telemetry. Storage analysis stays local. Release checks and preparation contact GitHub only when requested or explicitly enabled; Contribution links open only when selected.
 
 The compact overview pairs a mapped-size donut with its category legend and shows up to five application rows, sorted by mapped size. The popup is 360 theme-scaled units wide and normally capped at 480 units high. The triangle beside Close expands the overview up to the available screen height, or condenses it again; lists longer than the screen remain scrollable. On application details and dashboard pages, that triangle returns to the previous page instead. Search hides the chart to make room for results; pressing the search icon again clears the filter and restores the normal overview. Its visual layout takes inspiration from [Screen Time](https://github.com/ax1g/quickshell-screentime-plugin), using Omarchy's own components.
 
@@ -68,6 +92,10 @@ The dashboard uses a category strip, snapshot bars and two-column highlights. Ca
 
 **Settings:** compact rounded cards group pill-shaped display switches, color swatches, history, growth notifications, mappings and local data. Toggle the home chart, dashboard highlights, yearly cards or page/chart motion independently; switches also accept Space or Enter and mirror in right-to-left layouts. Custom color and threshold fields expand only when requested. Colors follow theme/text/alert tokens or a validated opaque `#RRGGBB` value. Threshold saves acknowledge the confirmed result; invalid or failed input stays editable. The chart window can show 7, 14, 30 or 60 retained samples without changing retention. History and notification consent remain explicit; additional privacy/storage information has a compact disclosure. Appearance choices do not enable recording or notifications. Clearing history requires an explicit confirmation; Cancel leaves all saved data untouched.
 
+**Contribution & About:** the four contribution rows open GitHub in your browser: Report a bug and Share an idea prepare an issue title; Contribute and Star on GitHub open the source repository. Mosaic does not submit issues, star automatically, or fetch star counts. The centered About card shows the Reveal mark, name, version and local/read-only identity. Only its logo moves; the card and text stay still. Every scroll re-entry starts the three-stage, 760 ms shutter/unfold/assembly sequence, with stagger order mirrored for right-to-left layouts. Leaving the section settles the logo immediately. The default-page logo uses the same sequence when the overview appears. Both the plugin's **Animations** switch and Omarchy's reduced-motion setting show a static mark instead.
+
+**Updates:** above Contribution, **Check now** checks the official stable GitHub release and prepares a newer compatible version without installing it. The card shows the prepared version and commit. **Review installation** explains the whole-shell restart; **Install & restart shell** approves only that exact commit. Automatic updates means optional daily checking and preparation—not automatic installation or restart. Local copies without trusted Git provenance, modified checkouts and repositories without stable releases are reported honestly. See [Release updater](#release-updater) for validation, backup and recovery details.
+
 **Alerts:** choose a threshold from 1 MiB to 1 TiB in Settings; the initial threshold is 256 MiB. Only new comparable scans can notify. Reopening a page or changing the threshold does not resend old events. Notification text contains a count, not application names or paths. Disabling history also disables alerts, but retains existing summaries until you choose **Clear history** and confirm.
 
 **User-added mappings:** this means your assignment, not independently verified ownership. Overlapping roots stay shared and are excluded from app totals. Broad system/home/XDG roots, virtual filesystems, symlinks and special files cannot be added. A saved path that later disappears remains editable/removable and is not reported as zero. Editing the same app/path updates its category; removing an association never removes files.
@@ -78,7 +106,7 @@ The dashboard uses a category strip, snapshot bars and two-column highlights. Ca
 
 Recording/alert settings and mappings are stored in `${XDG_CONFIG_HOME:-~/.config}/omarchy/mosaic/settings.json`; history and alerts are in `${XDG_STATE_HOME:-~/.local/state}/omarchy/mosaic/history.json`. Files are private (0600), directories are private (0700), and updates are atomic and locked. Corrupt or inaccessible state produces an error rather than a silent reset. **Clear history** deletes only this plugin's summaries and alert records; it preserves mappings and application files.
 
-Presentation preferences use this widget's native entry in `~/.config/omarchy/shell.json`, preserving its other keys. Omarchy's settings API owns that persistence; the plugin reports unavailable/rejected updates rather than silently creating independent storage.
+Presentation preferences and automatic-preparation consent use this widget's native entry in `~/.config/omarchy/shell.json`, preserving unrelated keys. Omarchy's settings API owns that persistence; the plugin reports unavailable/rejected changes rather than silently creating independent storage. The new `prepareUpdates` preference defaults off: consent to the older metadata-only checker does **not** authorize downloading code. Private updater state, staged code and recovery snapshots live under `${XDG_STATE_HOME:-~/.local/state}/omarchy/mosaic/updater/`; clearing scan history does not change updater consent or erase recovery artifacts. The obsolete metadata-only `updates.json` cache is no longer read.
 
 ## Folder breakdowns and deeper scans
 
@@ -153,7 +181,7 @@ mosaic/
 │   ├── components/     # Shared controls, charts, cards, and Reveal mark
 │   ├── pages/          # Overview, categories, history, settings, and detail pages
 │   └── lib/            # JavaScript models, protocols, geometry, and presentation
-├── backend/            # Python scanner, persistence, mappings, and file actions
+├── backend/            # Python scanner, persistence, mappings, file actions, release updater
 ├── tests/
 │   ├── python/         # Backend regression tests
 │   └── js/             # Model, protocol, and geometry regression tests
@@ -161,7 +189,7 @@ mosaic/
 └── i18n/               # Translation catalogs
 ```
 
-`manifest.json` loads `qml/Service.qml` and `qml/BarWidget.qml`. The service invokes the Python entry points in `backend/`; pages share controls from `qml/components/` and pure JavaScript from `qml/lib/`. Private settings and history live outside this repository and the installed code directory.
+`manifest.json` loads `qml/Service.qml` and `qml/BarWidget.qml`. The service invokes the Python entry points in `backend/`; pages share controls from `qml/components/` and pure JavaScript from `qml/lib/`. Private settings, history and update metadata live outside this repository and the installed code directory.
 
 ## Installation and development
 
@@ -191,6 +219,33 @@ omarchy plugin enable naolselemon.mosaic --section right
 ```
 
 Edit this source directory, then repeat the mirror command to deploy changes. If plugin rescanning leaves old QML cached, run `omarchy restart shell`; this restarts the whole Omarchy shell, not just this plugin. Do not launch a second Quickshell instance for it.
+
+### Release updater
+
+Requires Git, the installed Omarchy validator, a working systemd user manager and the normal unlocked Omarchy shell. Installation is supported only for a clean, standalone Git checkout at `$HOME/.config/omarchy/plugins/naolselemon.mosaic`, with the exact official HTTPS origin. This follows the installed Omarchy registry's plugin location; Mosaic's settings/history still respect XDG locations. Development mirrors, shallow repositories, local changes, ignored user files and alternate Git histories are refused rather than overwritten. Publishing a version on `main` alone is not a stable release: the publisher must create a matching stable GitHub release and tag.
+
+1. **Check and prepare.** The fixed `https://api.github.com/repos/naolselemon/mosaic/releases/latest` endpoint must identify a non-draft, non-prerelease Mosaic release. A missing release is a normal “No stable releases yet” result. The tag resolves to an exact commit; its manifest identity/version, regular-file tree, clean bytes and ancestry from the installed commit must validate. The installed Omarchy validator checks the candidate. No downloaded plugin code runs during this step.
+2. **Review.** Settings shows the version and commit. Opening the review is not approval. The confirmation names the entire shell restart and shows the full commit. A changed candidate invalidates the open review. The backend revalidates both the prepared tree and installed base when approval arrives.
+3. **Install independently.** A private copy of the trusted installer runs in a temporary systemd user service, not a child of the shell being stopped. It refuses active Mosaic work and locked/ambiguous shell sessions, quiesces the existing shell, takes journal-locked snapshots of Mosaic's `settings.json` and `history.json`, records activation/configuration, and atomically exchanges code directories. It then restarts the shell and verifies the exact installed commit, Mosaic readiness and unchanged activation/configuration.
+4. **Recover conservatively.** A failed check never changes installed code. A failed installation can restore original code only when the owned data is unchanged and both trees still validate. New records or settings are never overwritten with a backup. Uncertain recovery remains **Recovery required**, retains both trees and private snapshots, and blocks another installation. Details identifies the retained directory and a command to restart the current shell; restarting alone does not resolve an unverified installation.
+
+The updater never edits your application files or rewrites shell configuration to hide an activation change. Existing data lives outside the exchanged code directory. Shell restart affects other plugins too; approval is always explicit.
+
+**Automatic updates** saves opt-in consent. A lightweight minute timer checks whether 24 hours have passed since the persisted attempt; only a due attempt contacts GitHub. There is no permanent updater daemon, no minute-by-minute network request, no automatic restart and no repeated installation on old approval. Turning the switch off stops future scheduled checks, not an already approved independent installation.
+
+Metadata and command output are bounded. Committed file sizes/counts are checked before checkout; fetch/materialization have per-file and monitored storage limits. Staging normally uses the private updater directory. If its filesystem differs from the installed code, a private `$HOME/.config/omarchy/.mosaic-updater-staging` directory enables atomic exchange. Retained candidates and recovery trees are not silently deleted; reaching the aggregate staging budget refuses further preparation and requires inspecting retained artifacts.
+
+Read status or explicitly prepare from an installed checkout:
+
+```sh
+python3 -B backend/updates.py load
+python3 -B backend/updates.py check
+```
+
+`load` makes no network request. `check` may download code but cannot install it. The `install --commit FULL_SHA` operation is the restart approval used by Settings; it never accepts an arbitrary repository, source path or version override.
+
+The runtime exposes `updateHealth`, `beginUpdate` and `endUpdate` for the independent worker. Readiness means successful lightweight workspace loading, not completion of a disk scan. Once quiesced, new scans, workspace mutations and folder actions are refused until the guard is released or the shell restarts.
+
 
 ### Migrating a local App Data Map installation
 
@@ -240,6 +295,8 @@ omarchy plugin validate .
 ```
 
 Tests cover discovery precedence, known versus inferred/user-assigned ownership, overlaps, safe traversal, hard-link accounting, exact breakdown partitions, partial and inaccessible measurements, selected-app isolation, safe folder targets, cancellation, both protocols, private persistence, growth comparability, replay suppression, cautious leftover detection, package/deployment attribution, preference input boundaries, yearly snapshot/growth invariants, donut hit geometry, category-local measurement/confidence boundaries, zero versus unmeasured apps, and proportional treemap area, bounds, non-overlap and exact Other membership.
+
+Updater coverage uses private temporary Git repositories to test release identity, expanded-tree and storage bounds, local edits, ancestry, exact approval, interrupted attempts, worker bootstrap, journal locking and recovery. Exercise an independent systemd worker against an isolated restartable shell before changing installation code: verify successful exact-commit installation, post-restart failure with unchanged-data rollback, and changed-data recovery that preserves the new generation. Never inject failure into the user's running desktop or publish fixture releases. In the real Settings surface verify icon/subtitle alignment, keyboard toggles, stale-review cancellation, explicit restart warning, unsupported/no-release states and default-off preparation.
 
 Exercise the real shell after UI changes: expand and condense the overview with the triangle, checking screen bounds, list scrolling and footer visibility. Type a multi-character search, then close it with the search icon and verify that the filter clears and the normal overview returns. Search again, press Enter once to enter details and again to expand a breakdown, use Tab to copy and open a child directory, expand the compact ownership card and its optional raw evidence, and scroll with Page Up/Down. Check the back triangle on app details and nested dashboard pages. Open Scan details only from the overview, verify its match-count partition and technical cards, and confirm that deep scans do not change its overview scope or expose deep progress as overview progress. Open Keyboard with the overview footer icon and `?`; both routes must return to their origin. Start a deeper scan with Ctrl+D, cancel using the visible header control, then run another to completion. Check that overview totals and timestamps remain unchanged during deeper work, cancelled roots show unknown sizes rather than zero, and a full rescan clears the deeper snapshot. Test no results, arrow-key selection, root Open/Copy shortcuts and each Escape navigation step as well.
 

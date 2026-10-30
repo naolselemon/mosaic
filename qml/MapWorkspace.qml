@@ -13,12 +13,16 @@ Item {
     required property var service
     required property var strings
     property var hostWidget: null
+    property bool presentationActive: false
+    readonly property bool pagePresented: presentationActive && !pageEntrance.running
+    readonly property real viewportY: scroll.contentY
+    readonly property real viewportHeight: scroll.height
     property string page: "dashboard"
     property string categoryKey: "data"
     readonly property var categoryTabs: ["config", "data", "cache", "state"]
     property var trail: []
     readonly property var view: service ? service.workspace : null
-    readonly property bool busy: !service || service.busy || service.workspaceBusy
+    readonly property bool busy: !service || service.busy || service.workspaceBusy || service.updateQuiesced
     readonly property bool ready: !!view && !!service && service.workspaceReady
     readonly property bool typing: !!pageLoader.item && pageLoader.item.typing
     readonly property var settings: view ? view.settings : null

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Commons
+import "../lib/MosaicGeometry.js" as Geometry
 
 Item {
     id: root
@@ -21,27 +22,27 @@ Item {
         ShapePath {
             strokeWidth: -1
             fillColor: root.foreground
-            PathSvg { path: "M0 0H42V20H20V42H0Z" }
+            PathSvg { path: Geometry.facets[0].path }
         }
         ShapePath {
             strokeWidth: -1
             fillColor: Util.alpha(root.foreground, 0.8)
-            PathSvg { path: "M78 0H120V42H100V20H78Z" }
+            PathSvg { path: Geometry.facets[1].path }
         }
         ShapePath {
             strokeWidth: -1
             fillColor: Util.alpha(root.foreground, 0.8)
-            PathSvg { path: "M0 78H20V100H42V120H0Z" }
+            PathSvg { path: Geometry.facets[2].path }
         }
         ShapePath {
             strokeWidth: -1
             fillColor: root.foreground
-            PathSvg { path: "M100 78H120V120H78V100H100Z" }
+            PathSvg { path: Geometry.facets[3].path }
         }
         ShapePath {
             strokeWidth: -1
             fillColor: root.centerColor
-            PathSvg { path: "M60 37L83 60L60 83L37 60Z" }
+            PathSvg { path: Geometry.center }
         }
     }
 }

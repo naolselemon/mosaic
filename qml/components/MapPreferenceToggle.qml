@@ -7,15 +7,20 @@ Item {
     id: root
     required property var workspace
     required property string label
+    property string icon: ""
+    property string description: ""
+    property color accent: Color.accent
     property bool checked: false
     signal clicked()
 
     Layout.fillWidth: true
+    Layout.minimumWidth: 0
     implicitHeight: Math.max(Style.space(38), labelText.implicitHeight + Style.space(16))
     activeFocusOnTab: enabled
     opacity: enabled ? 1 : 0.45
     Accessible.role: Accessible.CheckBox
     Accessible.name: label
+    Accessible.description: description
     Accessible.checked: checked
     Accessible.focusable: enabled
     Accessible.onToggleAction: if (enabled) clicked()
@@ -36,15 +41,17 @@ Item {
     }
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: Style.space(8)
-        anchors.rightMargin: Style.space(8)
+        anchors.leftMargin: Style.space(root.icon !== "" ? 4 : 8)
+        anchors.rightMargin: Style.space(root.icon !== "" ? 4 : 8)
         spacing: Style.space(10)
-        MapText {
+        MapPreferenceLabel {
             id: labelText
             Layout.fillWidth: true
-            text: root.label
-            font.pixelSize: Style.font.bodySmall
-            wrapMode: Text.Wrap
+            icon: root.icon
+            label: root.label
+            description: root.description
+            accent: root.accent
+            Accessible.ignored: true
         }
         // Ui.ToggleSwitch's pill geometry and native state tokens, with the
         // workspace motion preference applied as well as the shell's setting.

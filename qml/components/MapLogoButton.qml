@@ -6,24 +6,33 @@ MapIconButton {
     id: root
     property bool motionEnabled: true
     property bool brand: false
+    property bool presented: false
     iconText: brand ? "" : Icons.glyph(icon, I18n.rightToLeft)
     implicitWidth: Style.space(42)
     implicitHeight: Style.space(42)
     iconSize: Style.space(30)
     foreground: Color.accent
     Loader {
+        id: brandMark
         anchors.centerIn: parent
         width: root.iconSize
         height: root.iconSize
         active: root.brand
-        sourceComponent: MosaicMark {
+        sourceComponent: MosaicAnimatedMark {
             foreground: root.foreground
             centerColor: Color.popups.text
+            presented: root.presented
+            motionEnabled: root.motionEnabled
         }
     }
 
     function play() {
         entrance.stop();
+        if (brand) {
+            rotation = 0;
+            if (brandMark.item) brandMark.item.play();
+            return;
+        }
         if (motionEnabled && Style.duration(180) > 0) entrance.start();
         else rotation = 0;
     }

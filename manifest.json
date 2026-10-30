@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "naolselemon.mosaic",
   "name": "Mosaic",
-  "version": "2.5.1",
+  "version": "2.8.2",
   "author": "Naol Selemon",
   "license": "MIT",
-  "description": "Explore the settings, cache, data and state associated with your apps. Read-only, evidence-labeled, and entirely local.",
+  "description": "Explore the settings, cache, data and state associated with your apps. Read-only, evidence-labeled, with local storage analysis.",
   "kinds": ["service", "bar-widget"],
   "keepLoaded": true,
   "entryPoints": {

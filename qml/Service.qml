@@ -4,11 +4,13 @@ import Quickshell.Io
 import qs.Commons as Commons
 import "lib/Protocol.js" as Protocol
 import "lib/WorkspaceProtocol.js" as WorkspaceProtocol
+import "components"
 
 Item {
     id: root
     property var shell: null
     property var manifest: null
+    readonly property var updates: updateChecker
     property var apps: []
     property bool busy: false
     property bool ready: false
@@ -37,6 +39,7 @@ Item {
     property var workspace: null
     property bool workspaceBusy: false
     property bool workspaceReady: false
+    property bool updateQuiesced: false
     property string workspaceError: ""
     property string workspaceOperation: ""
     property string workspaceInput: ""
@@ -84,6 +87,11 @@ Item {
     property var finishedIds: ({})
     property int generation: 0
     Commons.Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
+    MapUpdateChecker {
+        id: updateChecker
+        service: root
+        installedVersion: root.manifest && typeof root.manifest.version === "string" ? root.manifest.version : ""
+    }
     Component.onCompleted: Qt.callLater(function () { root.requestWorkspace({op: "load"}); })
 
     function ensureScan() {
@@ -102,7 +110,7 @@ Item {
     }
 
     function startScan(mode, id) {
-        if (busy || scanner.running || workspaceBusy || workspaceWorker.running) return false;
+        if (updateQuiesced || busy || scanner.running || workspaceBusy || workspaceWorker.running) return false;
         ++generation;
         scanMode = mode;
         scanTargetId = id;
@@ -307,7 +315,7 @@ Item {
     }
 
     function openPath(value) {
-        if (actionBusy) return false;
+        if (updateQuiesced || actionBusy) return false;
         actionError = "";
         var path = findPath(value);
         if (!path || ["missing", "symlink", "denied", "error"].indexOf(path.status) >= 0) {
@@ -318,6 +326,23 @@ Item {
         actionBusy = true;
         actionDeadline.restart();
         opener.running = true;
+        return true;
+    }
+
+    function updateHealthJson() {
+        return JSON.stringify({
+            id: "naolselemon.mosaic",
+            version: manifest && typeof manifest.version === "string" ? manifest.version : "",
+            ready: !!manifest && workspace !== null,
+            busy: busy || workspaceBusy || actionBusy || scanner.running || workspaceWorker.running || opener.running,
+            quiesced: updateQuiesced
+        });
+    }
+
+    function beginUpdate() {
+        if (!manifest || workspace === null || updateQuiesced || busy || workspaceBusy || actionBusy
+                || scanner.running || workspaceWorker.running || opener.running) return false;
+        updateQuiesced = true;
         return true;
     }
 
@@ -339,7 +364,7 @@ Item {
     }
 
     function requestWorkspace(request, scanAfter) {
-        if (busy || workspaceBusy || workspaceWorker.running) {
+        if (updateQuiesced || busy || workspaceBusy || workspaceWorker.running) {
             workspaceError = strings.t("workspace.busy");
             return false;
         }
@@ -531,6 +556,9 @@ Item {
 
     IpcHandler {
         target: "naolselemon.mosaic"
+        function updateHealth(): string { return root.updateHealthJson(); }
+        function beginUpdate(): bool { return root.beginUpdate(); }
+        function endUpdate(): bool { root.updateQuiesced = false; return true; }
         function scan(): bool { return root.rescan(); }
         function deepScan(id: string): bool { return root.deepScan(id); }
         function detail(id: string): string { return JSON.stringify(root.detailsFor(id)); }

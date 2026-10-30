@@ -19,6 +19,7 @@ Ui.Panel {
     readonly property bool busy: !!service && service.busy
     readonly property bool mutationBusy: busy || !!service && service.workspaceBusy
     property bool workspaceOpen: false
+    property bool resettingView: false
     property int workspaceSide: -1
     property real workspaceReveal: workspaceOpen ? 1 : 0
     readonly property var uiPrefs: hostWidget ? hostWidget.uiPrefs : Presentation.preferences({})
@@ -26,13 +27,13 @@ Ui.Panel {
     readonly property bool motionEnabled: uiPrefs.motion && Style.duration(200) > 0
     onMotionEnabledChanged: if (!motionEnabled) workspaceSlide.complete()
     Behavior on workspaceReveal {
+        enabled: !root.resettingView
         NumberAnimation {
             id: workspaceSlide
             duration: root.motionEnabled ? Style.duration(root.workspaceOpen ? 200 : 140) : 0
             easing.type: Easing.OutCubic
             onRunningChanged: if (!running) {
                 content.forceActiveFocus();
-                if (!root.workspaceOpen) homeLogo.play();
             }
         }
     }
@@ -85,6 +86,18 @@ Ui.Panel {
     }
 
     Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
+    onOpenedChanged: {
+        if (!opened) return;
+        resettingView = true;
+        workspaceOpen = false;
+        selectedId = "";
+        selectedSnapshot = null;
+        cursorPath = "";
+        cursorActionPath = "";
+        expanded = false;
+        closeSearch();
+        Qt.callLater(function() { root.resettingView = false; });
+    }
 
     function open() {
         if (service) service.ensureScan();
@@ -272,6 +285,7 @@ Ui.Panel {
                 service: root.service
                 strings: root.translations
                 hostWidget: root.hostWidget
+                presentationActive: root.opened && root.workspaceOpen && !workspaceSlide.running
                 onAppRequested: function(id) { root.workspaceOpen = false; root.selectApp(id); }
                 onBackRequested: root.back()
                 onCloseRequested: root.close()
@@ -294,6 +308,7 @@ Ui.Panel {
                         brand: true
                         foreground: root.heroColor
                         motionEnabled: root.motionEnabled
+                        presented: root.opened && !root.workspaceOpen && !workspaceSlide.running && !root.detail
                         label: strings.t("workspace.open")
                         onClicked: root.showWorkspace("dashboard")
                     }

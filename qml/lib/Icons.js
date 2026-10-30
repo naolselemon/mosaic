@@ -4,6 +4,7 @@ function glyph(name, rightToLeft) {
     switch (name) {
     case "search": return "\uf002";
     case "refresh": return "\uf021";
+    case "download": return "\uf019";
     case "stop": return "\uf04d";
     case "close": return "\uf00d";
     case "back": return rightToLeft ? "\uf061" : "\uf060";
@@ -34,6 +35,11 @@ function glyph(name, rightToLeft) {
     case "keyboard": return "\uf11c";
     case "config": return "\uf1de";
     case "data": return "\uf1c0";
+    case "bug": return "\uf188";
+    case "idea": return "\uf0eb";
+    case "contribute": return "\uf126";
+    case "star": return "\uf005";
+    case "external": return "\uf08e";
     default: return "\uf05a";
     }
 }

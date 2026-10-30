@@ -16,7 +16,18 @@ Ui.BarWidget {
 
     onSettingsChanged: settingsDelivered = true
 
+    Binding {
+        target: root.service ? root.service.updates : null
+        property: "automatic"
+        value: root.uiPrefs.prepareUpdates === true
+        when: !!root.service
+    }
+
     function setUiPreference(key, value) {
+        if (service && service.updateQuiesced) {
+            preferenceError = strings.t("workspace.busy");
+            return false;
+        }
         if (!Presentation.valid(key, value)) {
             preferenceError = strings.t("preferences.invalid");
             return false;
@@ -33,7 +44,7 @@ Ui.BarWidget {
         // Native updates replace the whole entry, so retain every delivered key.
         var entry = {id: root.moduleName};
         for (var name in root.settings)
-            if (name !== "id" && Object.prototype.hasOwnProperty.call(root.settings, name))
+            if (name !== "id" && name !== "updateChecks" && Object.prototype.hasOwnProperty.call(root.settings, name))
                 entry[name] = root.settings[name];
         entry[key] = value;
         try {

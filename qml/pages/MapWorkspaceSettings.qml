@@ -81,26 +81,32 @@ ColumnLayout {
         id: group
         required property string title
         property string badge: ""
+        property bool semanticRows: false
         default property alias content: groupBody.data
         Layout.fillWidth: true
         implicitHeight: groupLayout.implicitHeight + Style.space(24)
-        radius: Math.max(Style.cornerRadius, Style.space(12))
-        color: Util.alpha(Color.popups.text, 0.035)
-        border.width: 1
-        border.color: Util.alpha(Color.popups.text, 0.08)
+        radius: Math.max(Style.cornerRadius, Style.space(semanticRows ? 8 : 12))
+        color: semanticRows ? Util.alpha(root.workspace.heroColor, 0.045) : Util.alpha(Color.popups.text, 0.035)
+        border.width: semanticRows ? Math.max(1, Style.normalBorderWidth) : 1
+        border.color: semanticRows ? Util.alpha(root.workspace.heroColor, 0.3) : Util.alpha(Color.popups.text, 0.08)
         ColumnLayout {
             id: groupLayout
-            x: Style.space(12)
+            x: Style.space(group.semanticRows ? 10 : 12)
             y: Style.space(12)
-            width: parent.width - Style.space(24)
+            width: Math.max(0, parent.width - 2 * x)
             spacing: Style.space(8)
             RowLayout {
                 Layout.fillWidth: true
+                Layout.leftMargin: group.semanticRows ? Style.space(4) : 0
+                Layout.rightMargin: group.semanticRows ? Style.space(4) : 0
                 spacing: Style.space(8)
                 MapText {
                     Layout.fillWidth: true
                     text: group.title
-                    font.pixelSize: Style.font.bodySmall
+                    font.pixelSize: group.semanticRows ? Style.font.caption : Style.font.bodySmall
+                    font.capitalization: group.semanticRows ? Font.AllUppercase : Font.MixedCase
+                    font.letterSpacing: group.semanticRows ? Style.space(1.5) : 0
+                    color: group.semanticRows ? root.workspace.heroColor : Color.popups.text
                     font.weight: Font.DemiBold
                     wrapMode: Text.Wrap
                 }
@@ -126,6 +132,7 @@ ColumnLayout {
                 }
             }
             Rectangle {
+                visible: !group.semanticRows
                 Layout.fillWidth: true
                 implicitHeight: 1
                 color: Util.alpha(Color.popups.text, 0.08)
@@ -133,7 +140,7 @@ ColumnLayout {
             ColumnLayout {
                 id: groupBody
                 Layout.fillWidth: true
-                spacing: Style.space(6)
+                spacing: Style.space(group.semanticRows ? 8 : 6)
             }
         }
     }
@@ -151,12 +158,26 @@ ColumnLayout {
     }
     component PreferenceToggle: MapPreferenceToggle {
         workspace: root.workspace
+        accent: root.workspace.heroColor
     }
     component PreferenceNote: MapText {
         Layout.fillWidth: true
         font.pixelSize: Style.font.caption
         color: Util.alpha(Color.popups.text, 0.62)
         wrapMode: Text.Wrap
+    }
+    component PreferenceLabel: MapPreferenceLabel {
+        Layout.fillWidth: true
+        Layout.leftMargin: Style.space(4)
+        Layout.rightMargin: Style.space(4)
+        accent: root.workspace.heroColor
+    }
+    component PreferenceDetails: ColumnLayout {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
+        Layout.leftMargin: Style.space(I18n.rightToLeft ? 4 : 29)
+        Layout.rightMargin: Style.space(I18n.rightToLeft ? 29 : 4)
+        spacing: Style.space(6)
     }
     component ColorEditor: ColumnLayout {
         id: editor
@@ -302,28 +323,23 @@ ColumnLayout {
     }
     PreferenceGroup {
         Layout.fillWidth: true
+        semanticRows: true
         title: root.workspace.strings.t("preferences.history")
         badge: root.workspace.strings.tn("preferences.retained", root.retained).arg(root.workspace.number(root.retained))
         PreferenceToggle {
+            icon: "history"
             label: root.workspace.strings.t("workspace.keepHistory")
+            description: root.workspace.strings.t("preferences.historyConsent")
             checked: root.historyEnabled
             enabled: root.workspace.ready && !root.workspace.busy
             onClicked: root.workspace.service.setWorkspaceSettings({historyEnabled: !checked})
         }
-        PreferenceNote {
-            text: root.workspace.strings.t("preferences.historyConsent")
+        PreferenceLabel {
+            icon: "chart"
+            label: root.workspace.strings.t("preferences.chartWindow")
+            description: root.workspace.strings.t("preferences.chartWindowHint")
         }
-        GridLayout {
-            Layout.fillWidth: true
-            columns: width >= Style.space(270) ? 2 : 1
-            columnSpacing: Style.space(8)
-            rowSpacing: Style.space(4)
-            MapText {
-                Layout.fillWidth: true
-                text: root.workspace.strings.t("preferences.chartWindow")
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.Wrap
-            }
+        PreferenceDetails {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.space(2)
@@ -341,152 +357,201 @@ ColumnLayout {
             }
         }
         PreferenceButton {
-            Layout.alignment: I18n.rightToLeft ? Qt.AlignRight : Qt.AlignLeft
-            text: root.workspace.strings.t(root.privacyOpen ? "preferences.hidePrivacy" : "preferences.privacyDetails")
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
+            implicitHeight: Math.max(Style.space(42), privacyLabel.implicitHeight + Style.space(12))
             selected: root.privacyOpen
+            Accessible.name: root.workspace.strings.t(root.privacyOpen ? "preferences.hidePrivacy" : "preferences.privacyDetails")
+            Accessible.description: privacyLabel.description
             Accessible.expanded: root.privacyOpen
             onClicked: root.privacyOpen = !root.privacyOpen
+            RowLayout {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Style.space(4)
+                anchors.rightMargin: Style.space(4)
+                spacing: Style.space(9)
+                MapPreferenceLabel {
+                    id: privacyLabel
+                    Layout.fillWidth: true
+                    icon: "data"
+                    label: root.workspace.strings.t("preferences.privacyDetails")
+                    description: root.workspace.strings.t("preferences.privacyHint")
+                    accent: root.workspace.heroColor
+                    Accessible.ignored: true
+                }
+                MapGlyph {
+                    Layout.preferredWidth: Style.space(16)
+                    icon: root.privacyOpen ? "down" : "next"
+                    font.pixelSize: Style.font.caption
+                    color: Util.alpha(root.workspace.heroColor, 0.7)
+                    Accessible.ignored: true
+                }
+            }
         }
-        PreferenceNote {
+        PreferenceDetails {
             visible: root.privacyOpen
-            text: root.workspace.strings.t("preferences.privacyHelp")
+            PreferenceNote {
+                text: root.workspace.strings.t("preferences.privacyHelp")
+            }
         }
     }
     PreferenceGroup {
         Layout.fillWidth: true
+        semanticRows: true
         title: root.workspace.strings.t("preferences.growth")
         PreferenceToggle {
+            icon: "alert"
             label: root.workspace.strings.t("workspace.growthAlerts")
+            description: root.workspace.strings.t(root.historyEnabled ? "preferences.alertConsent" : "preferences.alertRequiresHistory")
             checked: !!root.workspace.settings && root.workspace.settings.alertsEnabled
             enabled: root.workspace.ready && !root.workspace.busy && root.historyEnabled
             onClicked: root.workspace.service.setWorkspaceSettings({alertsEnabled: !checked})
         }
-        PreferenceNote {
-            // Keep notification consent next to its switch, including when on.
-            text: root.workspace.strings.t(root.historyEnabled ? "preferences.alertConsent" : "preferences.alertRequiresHistory")
+        PreferenceLabel {
+            icon: "growth"
+            label: root.workspace.strings.t("workspace.threshold")
+            description: root.workspace.strings.t("preferences.thresholdHint")
         }
-        RowLayout {
-            Layout.fillWidth: true
-            MapText {
-                Layout.fillWidth: true
-                text: root.workspace.strings.t("workspace.threshold")
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.Wrap
-            }
-            MapText {
+        PreferenceDetails {
+            PreferenceNote {
                 visible: root.pendingThreshold >= 0 || root.thresholdSaved
                 text: root.workspace.strings.t(root.pendingThreshold >= 0 ? "preferences.saving" : "preferences.saved")
-                font.pixelSize: Style.font.caption
                 color: root.workspace.insightColor
             }
-        }
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Style.space(2)
-            Repeater {
-                model: [100, 500, 1024]
+            GridLayout {
+                Layout.fillWidth: true
+                columns: width >= Style.space(300) ? 4 : 2
+                columnSpacing: Style.space(2)
+                rowSpacing: Style.space(2)
+                Repeater {
+                    model: [100, 500, 1024]
+                    PreferenceButton {
+                        required property int modelData
+                        Layout.fillWidth: true
+                        text: root.workspace.size(modelData * 1048576, false)
+                        selected: !!root.workspace.settings && root.workspace.settings.thresholdBytes === modelData * 1048576
+                        enabled: root.workspace.ready && !root.workspace.busy
+                        horizontalPadding: Style.space(3)
+                        onClicked: {
+                            threshold.text = I18n.formatNumber(modelData, 2);
+                            root.thresholdEdited = true;
+                            root.saveThreshold(modelData);
+                        }
+                    }
+                }
                 PreferenceButton {
-                    required property int modelData
+                    id: customThresholdButton
                     Layout.fillWidth: true
-                    text: root.workspace.size(modelData * 1048576, false)
-                    selected: !!root.workspace.settings && root.workspace.settings.thresholdBytes === modelData * 1048576
-                    enabled: root.workspace.ready && !root.workspace.busy
+                    text: root.workspace.strings.t("preferences.custom")
                     horizontalPadding: Style.space(3)
+                    selected: root.customThresholdOpen || (!!root.workspace.settings && [100, 500, 1024].indexOf(root.workspace.settings.thresholdBytes / 1048576) < 0)
+                    enabled: root.workspace.ready && !root.workspace.busy
+                    Accessible.name: root.workspace.strings.t("preferences.customThreshold")
+                    Accessible.expanded: root.customThresholdOpen
                     onClicked: {
-                        threshold.text = I18n.formatNumber(modelData, 2);
-                        root.thresholdEdited = true;
-                        root.saveThreshold(modelData);
+                        root.customThresholdOpen = !root.customThresholdOpen;
+                        if (root.customThresholdOpen)
+                            Qt.callLater(function() { threshold.forceActiveFocus(); root.workspace.reveal(threshold); });
                     }
                 }
             }
-            PreferenceButton {
-                id: customThresholdButton
+            PreferenceNote {
+                visible: !root.customThresholdOpen && !!root.workspace.settings && [100, 500, 1024].indexOf(root.workspace.settings.thresholdBytes / 1048576) < 0
+                text: root.workspace.strings.t("preferences.currentThreshold").arg(root.workspace.settings ? root.workspace.size(root.workspace.settings.thresholdBytes, false) : "")
+            }
+            ColumnLayout {
                 Layout.fillWidth: true
-                text: root.workspace.strings.t("preferences.custom")
-                horizontalPadding: Style.space(3)
-                selected: root.customThresholdOpen || (!!root.workspace.settings && [100, 500, 1024].indexOf(root.workspace.settings.thresholdBytes / 1048576) < 0)
-                enabled: root.workspace.ready && !root.workspace.busy
-                Accessible.name: root.workspace.strings.t("preferences.customThreshold")
-                Accessible.expanded: root.customThresholdOpen
-                onClicked: {
-                    root.customThresholdOpen = !root.customThresholdOpen;
-                    if (root.customThresholdOpen)
-                        Qt.callLater(function() { threshold.forceActiveFocus(); root.workspace.reveal(threshold); });
+                Layout.minimumWidth: 0
+                visible: root.customThresholdOpen
+                spacing: Style.space(4)
+                RowLayout {
+                    Layout.fillWidth: true
+                    Ui.TextField {
+                        id: threshold
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        placeholderText: root.workspace.strings.t("workspace.thresholdPlaceholder")
+                        Accessible.name: root.workspace.strings.t("workspace.thresholdPlaceholder")
+                        enabled: root.workspace.ready && !root.workspace.busy
+                        inputMethodHints: Qt.ImhFormattedNumbersOnly
+                        onTextEdited: {
+                            root.thresholdEdited = true;
+                            root.thresholdSaved = false;
+                            root.thresholdUnconfirmed = false;
+                        }
+                        onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
+                        onAccepted: if (root.thresholdEdited && root.validThreshold) root.saveThreshold(root.thresholdMiB)
+                        Keys.onEscapePressed: event => {
+                            root.customThresholdOpen = false;
+                            customThresholdButton.forceActiveFocus();
+                            event.accepted = true;
+                        }
+                    }
+                    MapText { text: root.workspace.strings.t("unit.MiB"); font.pixelSize: Style.font.caption }
+                }
+                PreferenceButton {
+                    text: root.workspace.strings.t("workspace.save")
+                    enabled: root.workspace.ready && !root.workspace.busy && root.thresholdEdited && root.validThreshold
+                    onClicked: root.saveThreshold(root.thresholdMiB)
                 }
             }
-        }
-        PreferenceNote {
-            visible: !root.customThresholdOpen && !!root.workspace.settings && [100, 500, 1024].indexOf(root.workspace.settings.thresholdBytes / 1048576) < 0
-            text: root.workspace.strings.t("preferences.currentThreshold").arg(root.workspace.settings ? root.workspace.size(root.workspace.settings.thresholdBytes, false) : "")
-        }
-        RowLayout {
-            Layout.fillWidth: true
-            visible: root.customThresholdOpen
-            Ui.TextField {
-                id: threshold
-                Layout.fillWidth: true
-                placeholderText: root.workspace.strings.t("workspace.thresholdPlaceholder")
-                Accessible.name: root.workspace.strings.t("workspace.thresholdPlaceholder")
-                enabled: root.workspace.ready && !root.workspace.busy
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-                onTextEdited: {
-                    root.thresholdEdited = true;
-                    root.thresholdSaved = false;
-                    root.thresholdUnconfirmed = false;
-                }
-                onActiveFocusChanged: if (activeFocus) root.workspace.reveal(this)
-                onAccepted: if (root.thresholdEdited && root.validThreshold) root.saveThreshold(root.thresholdMiB)
-                Keys.onEscapePressed: event => {
-                    root.customThresholdOpen = false;
-                    customThresholdButton.forceActiveFocus();
-                    event.accepted = true;
-                }
+            PreferenceNote {
+                visible: root.customThresholdOpen && root.thresholdEdited && !root.validThreshold
+                text: root.workspace.strings.t("workspace.thresholdRange").arg(I18n.formatNumber(1)).arg(I18n.formatNumber(1048576))
+                color: Color.urgent
             }
-            MapText { text: root.workspace.strings.t("unit.MiB"); font.pixelSize: Style.font.caption }
-            PreferenceButton {
-                text: root.workspace.strings.t("workspace.save")
-                enabled: root.workspace.ready && !root.workspace.busy && root.thresholdEdited && root.validThreshold
-                onClicked: root.saveThreshold(root.thresholdMiB)
+            PreferenceNote {
+                visible: root.thresholdUnconfirmed
+                text: root.workspace.strings.t("preferences.thresholdUnconfirmed")
+                color: Color.urgent
             }
-        }
-        PreferenceNote {
-            visible: root.customThresholdOpen && root.thresholdEdited && !root.validThreshold
-            text: root.workspace.strings.t("workspace.thresholdRange").arg(I18n.formatNumber(1)).arg(I18n.formatNumber(1048576))
-            color: Color.urgent
-        }
-        PreferenceNote {
-            visible: root.thresholdUnconfirmed
-            text: root.workspace.strings.t("preferences.thresholdUnconfirmed")
-            color: Color.urgent
         }
     }
     PreferenceGroup {
         Layout.fillWidth: true
+        semanticRows: true
         title: root.workspace.strings.t("preferences.data")
-        GridLayout {
+        PreferenceButton {
             Layout.fillWidth: true
-            columns: width >= Style.space(270) ? 2 : 1
-            MapText {
-                Layout.fillWidth: true
-                text: root.workspace.strings.tn("workspace.mappingCount", root.mappingCount).arg(root.workspace.number(root.mappingCount))
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.Wrap
-            }
-            PreferenceButton {
-                Layout.alignment: I18n.rightToLeft ? Qt.AlignLeft : Qt.AlignRight
-                text: root.workspace.strings.t("workspace.mappings")
-                onClicked: root.workspace.navigate("mappings")
+            Layout.minimumWidth: 0
+            implicitHeight: Math.max(Style.space(42), mappingLabel.implicitHeight + Style.space(12))
+            Accessible.name: mappingLabel.label
+            Accessible.description: mappingLabel.description
+            onClicked: root.workspace.navigate("mappings")
+            RowLayout {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Style.space(4)
+                anchors.rightMargin: Style.space(4)
+                spacing: Style.space(9)
+                MapPreferenceLabel {
+                    id: mappingLabel
+                    Layout.fillWidth: true
+                    icon: "link"
+                    label: root.workspace.strings.t("workspace.mappings")
+                    description: root.workspace.strings.tn("workspace.mappingCount", root.mappingCount).arg(root.workspace.number(root.mappingCount))
+                    accent: root.workspace.heroColor
+                    Accessible.ignored: true
+                }
+                MapGlyph {
+                    Layout.preferredWidth: Style.space(16)
+                    icon: "next"
+                    font.pixelSize: Style.font.caption
+                    color: Util.alpha(root.workspace.heroColor, 0.7)
+                    Accessible.ignored: true
+                }
             }
         }
-        RowLayout {
-            Layout.fillWidth: true
+        PreferenceLabel {
+            icon: "history"
+            label: root.workspace.strings.t("preferences.savedData")
+            description: root.workspace.strings.t("preferences.savedDataHint")
+        }
+        PreferenceDetails {
             visible: !root.confirmClear
-            MapText {
-                Layout.fillWidth: true
-                text: root.workspace.strings.t("preferences.savedData")
-                font.pixelSize: Style.font.bodySmall
-                wrapMode: Text.Wrap
-            }
             PreferenceButton {
                 id: clearButton
                 text: root.workspace.strings.t("workspace.clearHistory")
@@ -499,11 +564,9 @@ ColumnLayout {
                 }
             }
         }
-        ColumnLayout {
+        PreferenceDetails {
             id: clearConfirmation
-            Layout.fillWidth: true
             visible: root.confirmClear
-            spacing: Style.space(6)
             PreferenceNote {
                 text: root.workspace.strings.t("preferences.clearSafety")
                 color: Color.popups.text
@@ -513,8 +576,10 @@ ColumnLayout {
                 text: root.clearError
                 color: Color.urgent
             }
-            RowLayout {
+            GridLayout {
                 Layout.fillWidth: true
+                columns: width >= Style.space(300) ? 2 : 1
+                rowSpacing: Style.space(4)
                 PreferenceButton {
                     id: cancelClear
                     Layout.fillWidth: true
@@ -536,33 +601,22 @@ ColumnLayout {
             }
         }
     }
-    PreferenceGroup {
+    MapUpdates {
         Layout.fillWidth: true
-        title: root.workspace.strings.t("preferences.about")
-        RowLayout {
-            Layout.fillWidth: true
-            MosaicMark {
-                Layout.preferredWidth: Style.space(22)
-                Layout.preferredHeight: Style.space(22)
-                foreground: root.workspace.heroColor
-                centerColor: Color.popups.text
-            }
-            MapText {
-                Layout.fillWidth: true
-                text: root.workspace.strings.t("app.name")
-                font.pixelSize: Style.font.bodySmall
-                font.weight: Font.DemiBold
-                wrapMode: Text.Wrap
-            }
-            MapText {
-                Layout.maximumWidth: parent.width / 2
-                text: root.workspace.service && root.workspace.service.manifest && root.workspace.service.manifest.version
-                    ? root.workspace.strings.t("preferences.version").arg(root.workspace.service.manifest.version)
-                    : root.workspace.strings.t("preferences.versionUnavailable")
-                font.pixelSize: Style.font.caption
-                color: Util.alpha(Color.popups.text, 0.62)
-                wrapMode: Text.Wrap
-            }
-        }
+        workspace: root.workspace
+    }
+    MapContribution {
+        Layout.fillWidth: true
+        workspace: root.workspace
+    }
+    MapAbout {
+        id: aboutCard
+        Layout.fillWidth: true
+        workspace: root.workspace
+        active: root.workspace.pagePresented && root.workspace.page === "settings"
+        inView: active && height > 0 && root.workspace.viewportHeight > 0
+            && Math.min(y + height, root.workspace.viewportY + root.workspace.viewportHeight)
+                - Math.max(y, root.workspace.viewportY)
+                >= Math.min(height, root.workspace.viewportHeight) * 0.4
     }
 }

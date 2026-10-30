@@ -32,6 +32,17 @@ test('only exact presentation values are accepted, not truthy strings or arbitra
   }
 });
 
+test('background code preparation requires fresh explicit boolean consent', () => {
+  for (const raw of [null, [], {}, {updateChecks: true}, {prepareUpdates: 'true'}, {prepareUpdates: 1},
+      {prepareUpdates: {}}, Object.create({prepareUpdates: true})])
+    assert.equal(model.preferences(raw).prepareUpdates, false);
+  assert.equal(model.preferences({prepareUpdates: true}).prepareUpdates, true);
+  assert.equal(model.preferences({prepareUpdates: false}).prepareUpdates, false);
+  assert.equal(model.valid('prepareUpdates', true), true);
+  assert.equal(model.valid('prepareUpdates', 'true'), false);
+  assert.equal(model.valid('updateChecks', true), false);
+});
+
 test('chart windows remain bounded to the supported retained-sample choices', () => {
   for (const value of [7, 14, 30, 60]) {
     assert.equal(model.valid('chartSamples', value), true);
